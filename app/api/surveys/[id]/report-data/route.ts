@@ -15,6 +15,23 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Fetch user's profile to verify company and role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id, role')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      console.error('Profile error:', profileError)
+      return NextResponse.json({ error: 'User profile not found' }, { status: 403 })
+    }
+
+    // Verify user has appropriate role (HR or admin)
+    if (!['admin', 'hr'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 })
+    }
+
     // Fetch survey details
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
@@ -24,6 +41,11 @@ export async function GET(
 
     if (surveyError || !survey) {
       return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
+    }
+
+    // Verify user's company matches survey's company
+    if (profile.company_id !== survey.company_id) {
+      return NextResponse.json({ error: 'Forbidden: Access denied to this survey' }, { status: 403 })
     }
 
     // Fetch company name

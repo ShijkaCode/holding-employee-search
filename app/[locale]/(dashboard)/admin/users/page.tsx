@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -43,7 +43,7 @@ import {
 } from '@/components/ui/form'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Pencil, Search } from 'lucide-react'
+import { Pencil, Search, Building2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface Profile {
@@ -53,9 +53,11 @@ interface Profile {
   role: string
   company_id: string | null
   department: string | null
+  org_unit_id: string | null
   employee_id: string | null
   avatar_url: string | null
   company?: { name: string } | null
+  org_path?: string | null
 }
 
 interface Company {
@@ -63,11 +65,19 @@ interface Company {
   name: string
 }
 
+interface OrgUnit {
+  id: string
+  name: string
+  path_names: string
+  level_depth: number
+  company_id: string
+}
+
 const profileSchema = z.object({
   full_name: z.string().min(1, 'Name is required'),
   role: z.enum(['admin', 'hr', 'specialist', 'employee']),
   company_id: z.string().optional(),
-  department: z.string().optional(),
+  org_unit_id: z.string().nullable().optional(),
   employee_id: z.string().optional(),
 })
 
@@ -76,6 +86,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>
 export default function UsersPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
+  const [orgUnits, setOrgUnits] = useState<OrgUnit[]>([])
   const [loading, setLoading] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
@@ -87,41 +98,58 @@ export default function UsersPage() {
 
   const supabase = createClient()
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      full_name: '',
-      role: 'employee',
-      company_id: '',
-      department: '',
-      employee_id: '',
-    },
-  })
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
 
-    const [profilesRes, companiesRes] = await Promise.all([
+    const [profilesRes, companiesRes, orgUnitsRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('*, company:companies(name)')
         .order('full_name'),
       supabase.from('companies').select('id, name').order('name'),
+      supabase
+        .from('org_hierarchy')
+        .select('id, name, path_names, level_depth, company_id')
+        .order('path_names'),
     ])
+
+    // Build a map of org_unit_id to path_names
+    const pathMap = new Map<string, string>()
+    orgUnitsRes.data?.forEach((ou) => {
+      if (ou.id && ou.path_names) {
+        pathMap.set(ou.id, ou.path_names)
+      }
+    })
 
     const formattedProfiles = (profilesRes.data || []).map((p) => ({
       ...p,
       company: Array.isArray(p.company) ? p.company[0] : p.company,
+      org_path: p.org_unit_id ? pathMap.get(p.org_unit_id) : null,
     }))
+
+    // Filter valid org units
+    const validOrgUnits: OrgUnit[] = []
+    orgUnitsRes.data?.forEach((ou) => {
+      if (ou.id && ou.name && ou.path_names && ou.level_depth !== null && ou.company_id) {
+        validOrgUnits.push({
+          id: ou.id,
+          name: ou.name,
+          path_names: ou.path_names,
+          level_depth: ou.level_depth,
+          company_id: ou.company_id,
+        })
+      }
+    })
 
     setProfiles(formattedProfiles)
     setCompanies(companiesRes.data || [])
+    setOrgUnits(validOrgUnits)
     setLoading(false)
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   const openEditDialog = (profile: Profile) => {
     setEditingProfile(profile)
@@ -129,11 +157,30 @@ export default function UsersPage() {
       full_name: profile.full_name,
       role: profile.role as ProfileFormValues['role'],
       company_id: profile.company_id || '',
-      department: profile.department || '',
+      org_unit_id: profile.org_unit_id || null,
       employee_id: profile.employee_id || '',
     })
     setShowDialog(true)
   }
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      full_name: '',
+      role: 'employee',
+      company_id: '',
+      org_unit_id: null,
+      employee_id: '',
+    },
+  })
+
+  // Watch company_id to filter org units
+  const selectedCompanyId = form.watch('company_id')
+
+  // Filter org units by selected company
+  const filteredOrgUnits = orgUnits.filter(
+    (ou) => ou.company_id === selectedCompanyId
+  )
 
   const onSubmit = async (data: ProfileFormValues) => {
     if (!editingProfile) return
@@ -147,7 +194,7 @@ export default function UsersPage() {
           full_name: data.full_name,
           role: data.role,
           company_id: data.company_id || null,
-          department: data.department || null,
+          org_unit_id: data.org_unit_id || null,
           employee_id: data.employee_id || null,
         })
         .eq('id', editingProfile.id)
@@ -181,6 +228,7 @@ export default function UsersPage() {
     (p) =>
       p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.org_path?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.department?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -260,7 +308,7 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={getRoleBadgeVariant(profile.role)}>
-                      {t(`roles.${profile.role}` as any)}
+                      {t(`roles.${profile.role}` as 'roles.admin' | 'roles.hr' | 'roles.specialist' | 'roles.employee')}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -269,7 +317,16 @@ export default function UsersPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {profile.department || (
+                    {profile.org_path ? (
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm">{profile.org_path}</span>
+                      </div>
+                    ) : profile.department ? (
+                      <span className="text-sm text-muted-foreground">
+                        {profile.department}
+                      </span>
+                    ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
@@ -351,7 +408,14 @@ export default function UsersPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('fields.company')}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value)
+                        // Clear org unit when company changes
+                        form.setValue('org_unit_id', null)
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t('fields.selectCompany')} />
@@ -373,13 +437,31 @@ export default function UsersPage() {
 
               <FormField
                 control={form.control}
-                name="department"
+                name="org_unit_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('fields.department')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('fields.departmentPlaceholder')} {...field} />
-                    </FormControl>
+                    <FormLabel>{t('fields.orgUnit')}</FormLabel>
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(value === 'none' ? null : value)
+                      }
+                      value={field.value || 'none'}
+                      disabled={!selectedCompanyId}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('fields.selectOrgUnit')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">{t('fields.noOrgUnit')}</SelectItem>
+                        {filteredOrgUnits.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.id}>
+                            {unit.path_names}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

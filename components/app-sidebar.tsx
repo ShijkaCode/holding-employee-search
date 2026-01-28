@@ -12,6 +12,8 @@ import {
   Search,
   ChevronUp,
   ClipboardList,
+  UsersRound,
+  Network,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -67,6 +69,12 @@ export function AppSidebar() {
       roles: ['admin', 'hr', 'specialist'],
     },
     {
+      title: tNav('employees'),
+      url: '/employees',
+      icon: UsersRound,
+      roles: ['admin', 'hr'],
+    },
+    {
       title: tNav('surveys'),
       url: '/surveys',
       icon: ClipboardList,
@@ -80,6 +88,12 @@ export function AppSidebar() {
       url: '/admin/companies',
       icon: Building2,
       roles: ['admin'],
+    },
+    {
+      title: tNav('orgUnits'),
+      url: '/admin/org-units',
+      icon: Network,
+      roles: ['admin', 'hr'],
     },
     {
       title: tNav('users'),

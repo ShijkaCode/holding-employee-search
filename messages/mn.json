@@ -60,9 +60,11 @@
         "dashboard": "Хянах самбар",
         "surveys": "Миний судалгаа",
         "forms": "Маягтууд",
+        "employees": "Ажилтнууд",
         "reports": "Тайлангууд",
         "companies": "Компаниуд",
         "users": "Хэрэглэгчид",
+        "orgUnits": "Бүтцийн нэгж",
         "main": "Үндсэн",
         "admin": "Админ",
         "settings": "Тохиргоо",
@@ -108,7 +110,13 @@
         "newForm": "Шинэ маягт",
         "createForm": "Маягт үүсгэх",
         "noForms": "Маягт байхгүй",
-        "noFormsDesc": "Эхлэхийн тулд анхны судалгааны маягтаа үүсгэнэ үү"
+        "noFormsDesc": "Эхлэхийн тулд анхны судалгааны маягтаа үүсгэнэ үү",
+        "messages": {
+            "deleteSuccess": "Маягт амжилттай устгагдлаа",
+            "deleteError": "Маягт устгахад алдаа гарлаа",
+            "confirmDeleteTitle": "Маягт устгах",
+            "confirmDeleteDesc": "Та энэ маягтыг устгахдаа итгэлтэй байна уу? Энэ үйлдлийг буцаах боломжгүй бөгөөд холбогдох бүх хариултууд устах болно."
+        }
     },
     "Dashboard": {
         "title": "Хянах самбар",
@@ -244,6 +252,7 @@
         "questionsTab": "Асуултууд ({count})",
         "responsesTab": "Хариултууд ({count})",
         "pendingTab": "Хүлээгдэж буй ({count})",
+        "hierarchyTab": "Бүтцээр",
         "surveyQuestions": "Судалгааны асуултууд",
         "surveyQuestionsDesc": "Энэ судалгааны бүх асуултууд хэсгээр зохион байгуулагдсан",
         "noQuestionsAdded": "Асуулт нэмэгдээгүй байна",
@@ -292,6 +301,52 @@
         "mongolian": "Монгол"
     },
     "Admin": {
+        "orgUnits": {
+            "title": "Бүтцийн нэгж",
+            "subtitle": "Байгууллагын бүтцийг удирдах",
+            "addUnit": "Нэгж нэмэх",
+            "addRootUnit": "Үндсэн нэгж нэмэх",
+            "addChildUnit": "Дэд нэгж нэмэх",
+            "editUnit": "Нэгж засах",
+            "deleteUnit": "Нэгж устгах",
+            "addDesc": "Шинэ бүтцийн нэгж үүсгэх",
+            "editDesc": "Бүтцийн нэгжийн мэдээллийг шинэчлэх",
+            "name": "Нэгжийн нэр",
+            "namePlaceholder": "Нэгжийн нэр оруулна уу",
+            "levelType": "Түвшний төрөл",
+            "levelTypePlaceholder": "ж.нь: Газар, Алба, Баг",
+            "parentUnit": "Эцэг нэгж",
+            "parentPlaceholder": "Эцэг нэгж сонгох",
+            "noParent": "Эцэг нэгжгүй (үндсэн түвшин)",
+            "sortOrder": "Эрэмбэ",
+            "sortOrderPlaceholder": "Харуулах дараалал (0, 1, 2...)",
+            "employeeCount": "{count} ажилтан",
+            "noUnits": "Бүтцийн нэгж байхгүй байна",
+            "noUnitsDesc": "Байгууллагын бүтцийг бий болгохын тулд анхны нэгжээ үүсгэнэ үү",
+            "tree": "Байгууллагын бүтэц",
+            "treeDesc": "Байгууллагын шатлалт бүтэц",
+            "levelTypes": {
+                "division": "Газар",
+                "department": "Алба",
+                "team": "Баг",
+                "group": "Хэсэг",
+                "unit": "Нэгж"
+            },
+            "messages": {
+                "created": "Нэгж амжилттай үүсгэгдлээ",
+                "updated": "Нэгж амжилттай шинэчлэгдлээ",
+                "deleted": "Нэгж амжилттай устгагдлаа",
+                "createError": "Нэгж үүсгэхэд алдаа гарлаа",
+                "updateError": "Нэгж шинэчлэхэд алдаа гарлаа",
+                "deleteError": "Нэгж устгахад алдаа гарлаа",
+                "confirmDelete": "Та энэ нэгжийг устгахдаа итгэлтэй байна уу?",
+                "deleteWarning": "Энэ нь бүх дэд нэгжүүдийг устгаж, ажилтнуудын хуваарилалтыг арилгана."
+            },
+            "validation": {
+                "nameRequired": "Нэгжийн нэр шаардлагатай",
+                "levelTypeRequired": "Түвшний төрөл шаардлагатай"
+            }
+        },
         "companies": {
             "title": "Компаниуд",
             "subtitle": "Байгууллагын компаниудыг удирдах",
@@ -335,7 +390,7 @@
                 "user": "Хэрэглэгч",
                 "role": "Эрх",
                 "company": "Компани",
-                "department": "Хэлтэс"
+                "department": "Бүтцийн нэгж"
             },
             "noUsers": "Хэрэглэгч олдсонгүй",
             "editUser": "Хэрэглэгч засах",
@@ -344,8 +399,9 @@
                 "fullName": "Бүтэн нэр",
                 "role": "Эрх",
                 "company": "Компани",
-                "department": "Хэлтэс",
-                "departmentPlaceholder": "ж.нь: Инженерчлэл",
+                "orgUnit": "Бүтцийн нэгж",
+                "selectOrgUnit": "Бүтцийн нэгж сонгох",
+                "noOrgUnit": "Бүтцийн нэгжгүй",
                 "employeeId": "Ажилтны ID",
                 "employeeIdPlaceholder": "ж.нь: EMP001",
                 "selectCompany": "Компани сонгох",
@@ -365,5 +421,158 @@
                 "nameRequired": "Нэр шаардлагатай"
             }
         }
+    },
+    "Employees": {
+        "title": "Ажилтнууд",
+        "subtitle": "Байгууллагын ажилтнуудыг харах, удирдах",
+        "searchPlaceholder": "Нэр, имэйл, ID-р хайх...",
+        "filterByUnit": "Нэгжээр шүүх",
+        "allUnits": "Бүх нэгж",
+        "table": {
+            "employee": "Ажилтан",
+            "employeeId": "Ажилтны ID",
+            "orgUnit": "Байгууллагын нэгж",
+            "role": "Эрх",
+            "surveys": "Судалгаа",
+            "actions": "Үйлдлүүд"
+        },
+        "noEmployees": "Ажилтан олдсонгүй",
+        "noEmployeesDesc": "Таны хайлтад тохирох ажилтан олдсонгүй",
+        "importEmployees": "Ажилтан импортлох",
+        "completedSurveys": "{completed}/{total} дууссан",
+        "viewDetails": "Дэлгэрэнгүй харах",
+        "editEmployee": "Ажилтан засах",
+        "totalEmployees": "{count} ажилтан",
+        "roles": {
+            "admin": "Админ",
+            "hr": "Хүний нөөц",
+            "specialist": "Мэргэжилтэн",
+            "employee": "Ажилтан"
+        }
+    },
+    "Import": {
+        "title": "Ажилтан импортлох",
+        "subtitle": "Ажилтнууд болон байгууллагын бүтцийг импортлохын тулд Excel файл оруулна уу",
+        "steps": {
+            "upload": "Оруулах",
+            "mapping": "Холбох",
+            "preview": "Урьдчилан харах",
+            "import": "Импортлох"
+        },
+        "dragDropTitle": "Excel файлаа энд хаяна уу",
+        "dragDropSubtitle": ".xlsx болон .xls файлуудыг дэмждэг",
+        "selectFile": "Файл сонгох",
+        "parsing": "Уншиж байна...",
+        "rowCount": "{count} мөр",
+        "columnCount": "{count} багана",
+        "detectedColumns": "Илрүүлсэн баганууд:",
+        "columnMapping": "Баганын холболт",
+        "columnMappingDesc": "Excel баганыг ажилтны талбар болон бүтцийн түвшинтэй холбоно уу",
+        "hierarchyLevels": "Шатлалын түвшний төрлүүд",
+        "hierarchyLevelsDesc": "Бүтцийн түвшин бүрт төрлийн нэр тодорхойлно уу",
+        "level": "Түвшин {n}",
+        "levelTypePlaceholder": "ж.нь: Газар, Алба, Баг",
+        "presets": "Түргэн сонголт:",
+        "continueToPreview": "Урьдчилан харах",
+        "back": "Буцах",
+        "startImport": "Импорт эхлүүлэх",
+        "importing": "Өгөгдөл импортлож байна...",
+        "employees": "ажилтан",
+        "more": "дахин",
+        "noData": "(өгөгдөл байхгүй)",
+        "row": "Мөр {n}",
+        "moreErrors": "алдаа нэмэлт",
+        "fields": {
+            "skip": "Энэ баганыг алгасах",
+            "employeeName": "Ажилтны нэр",
+            "email": "Имэйл",
+            "employeeId": "Ажилтны ID",
+            "hierarchyLevel1": "Бүтцийн түвшин 1",
+            "hierarchyLevel2": "Бүтцийн түвшин 2",
+            "hierarchyLevel3": "Бүтцийн түвшин 3",
+            "hierarchyLevel4": "Бүтцийн түвшин 4",
+            "hierarchyLevel5": "Бүтцийн түвшин 5"
+        },
+        "validation": {
+            "nameRequired": "Ажилтны нэрийг зааж өгнө үү",
+            "hierarchyRecommended": "Ажилтнуудыг зохион байгуулахын тулд бүтцийн баганыг холбоно уу"
+        },
+        "stats": {
+            "totalEmployees": "Нийт ажилтан",
+            "orgUnits": "Илрүүлсэн нэгж",
+            "withOrg": "Нэгжтэй",
+            "withoutOrg": "Нэгжгүй"
+        },
+        "errors": {
+            "title": "{count} алдаа олдлоо",
+            "description": "Эдгээр мөрүүд импортын үед алгасагдана",
+            "noData": "Файлд өгөгдөл байхгүй байна",
+            "parseError": "Excel файлыг унших боломжгүй байна",
+            "invalidFormat": "Зөв Excel файл оруулна уу (.xlsx эсвэл .xls)",
+            "missingName": "Ажилтны нэр байхгүй байна",
+            "noExistingUser": "{email} хаягтай хэрэглэгч олдсонгүй",
+            "noEmail": "Имэйл хаяг оруулаагүй байна"
+        },
+        "preview": {
+            "title": "Импортын урьдчилсан харагдац",
+            "description": "Импортлохын өмнө өгөгдлийн бүтцийг шалгана уу",
+            "noData": "Урьдчилан харах өгөгдөл байхгүй"
+        },
+        "messages": {
+            "success": "Импорт амжилттай дууслаа",
+            "partial": "Импорт зарим алдаатай дууслаа",
+            "failed": "Импорт амжилтгүй болсон"
+        },
+        "complete": {
+            "title": "Импорт дууссан",
+            "description": "Импортын процесс дууслаа",
+            "unitsCreated": "Үүсгэсэн нэгж",
+            "employeesUpdated": "Шинэчилсэн ажилтан",
+            "errors": "Алдаа",
+            "errorDetails": "Алдааны дэлгэрэнгүй:",
+            "done": "Дууслаа"
+        }
+    },
+    "HierarchyTable": {
+        "totalEmployees": "Нийт ажилтан",
+        "completed": "Дууссан",
+        "partial": "Явагдаж буй",
+        "anonymityRiskUnits": "Нууцлалын эрсдэлтэй нэгж",
+        "expandAll": "Бүгдийг дэлгэх",
+        "collapseAll": "Бүгдийг хураах",
+        "refresh": "Шинэчлэх",
+        "employee": "Ажилтан",
+        "status": "Төлөв",
+        "submittedAt": "Илгээсэн огноо",
+        "completedShort": "дууссан",
+        "statusCompleted": "Дууссан",
+        "statusPartial": "Явагдаж буй",
+        "statusPending": "Хүлээгдэж буй",
+        "errorTitle": "Өгөгдөл ачаалахад алдаа гарлаа",
+        "retry": "Дахин оролдох",
+        "noData": "Ажилтны өгөгдөл байхгүй",
+        "noDataDesc": "Энэ судалгаанд ажилтан оноогоогүй байна.",
+        "anonymityWarning": "Нууцлалын босго доор",
+        "anonymityRisk": "Нууцлалын эрсдэл",
+        "anonymityTooltipTitle": "Нууцлалын хамгаалалт",
+        "anonymityTooltipDesc": "{threshold}-аас бага хариулттай нэгжүүд ажилтны нууцлалыг хамгаалахын тулд тэмдэглэгдсэн.",
+        "dataHidden": "Нууцлалын үүднээс нуугдсан"
+    },
+    "Report": {
+        "title": "Судалгааны тайлан",
+        "close": "Хаах",
+        "print": "Дахин хэвлэх",
+        "date": "Огноо",
+        "statisticsTitle": "Хариултын статистик",
+        "totalParticipants": "Нийт оролцогч",
+        "completed": "Бөглөсөн",
+        "completionRate": "Гүйцэтгэлийн хувь",
+        "sectionTitle": "Хэсэг",
+        "questionCode": "Код",
+        "question": "Асуулт",
+        "responseDistribution": "Хариултын тархалт",
+        "average": "Дундаж",
+        "responses": "хариулт",
+        "noData": "Өгөгдөл байхгүй"
     }
 }

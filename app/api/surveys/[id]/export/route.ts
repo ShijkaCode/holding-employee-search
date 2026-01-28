@@ -15,6 +15,23 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Fetch user's profile to verify company and role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id, role')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      console.error('Profile error:', profileError)
+      return NextResponse.json({ error: 'User profile not found' }, { status: 403 })
+    }
+
+    // Verify user has appropriate role (HR or admin)
+    if (!['admin', 'hr'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 })
+    }
+
     // Fetch survey details
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
@@ -25,6 +42,11 @@ export async function GET(
     if (surveyError || !survey) {
       console.error('Survey error:', surveyError)
       return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
+    }
+
+    // Verify user's company matches survey's company
+    if (profile.company_id !== survey.company_id) {
+      return NextResponse.json({ error: 'Forbidden: Access denied to this survey' }, { status: 403 })
     }
 
     // Fetch company name
@@ -65,19 +87,34 @@ export async function GET(
 
     // Fetch profiles separately for the employees who responded
     const employeeIds = responses?.map(r => r.employee_id) || []
-    let profilesMap: Record<string, { full_name: string; email: string | null; department: string | null }> = {}
+    let profilesMap: Record<string, { full_name: string; email: string | null; org_unit_path: string | null }> = {}
 
     if (employeeIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, email, department')
+        .select('id, full_name, email, org_unit_id')
         .in('id', employeeIds)
+
+      // Fetch org unit paths for employees with org_unit_id
+      const orgUnitIds = profiles?.map(p => p.org_unit_id).filter(Boolean) || []
+      let orgPathsMap: Record<string, string> = {}
+
+      if (orgUnitIds.length > 0) {
+        const { data: orgHierarchy } = await supabase
+          .from('org_hierarchy')
+          .select('id, path_names')
+          .in('id', orgUnitIds)
+
+        orgHierarchy?.forEach(org => {
+          orgPathsMap[org.id] = org.path_names
+        })
+      }
 
       profiles?.forEach(p => {
         profilesMap[p.id] = {
           full_name: p.full_name,
           email: p.email,
-          department: p.department,
+          org_unit_path: p.org_unit_id ? (orgPathsMap[p.org_unit_id] || null) : null,
         }
       })
     }
@@ -90,7 +127,7 @@ export async function GET(
       'Company name',
       'Employee name',
       'Email',
-      'Department',
+      'Organization Unit',
       'Completion time',
       ...questionCodes,
     ]
@@ -106,7 +143,7 @@ export async function GET(
         cleanValue(companyName),
         cleanValue(profile?.full_name || ''),
         cleanValue(profile?.email || ''),
-        cleanValue(profile?.department || ''),
+        cleanValue(profile?.org_unit_path || ''),
         response.submitted_at ? formatDate(response.submitted_at) : '',
         ...questionCodes.map((code) => {
           const answer = answers[code]

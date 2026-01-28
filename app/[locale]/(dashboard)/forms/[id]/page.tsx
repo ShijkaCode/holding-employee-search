@@ -52,9 +52,20 @@ import {
   XCircle,
   Download,
   FileDown,
+  Trash2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useTranslations } from 'next-intl'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface Survey {
   id: string
@@ -63,6 +74,7 @@ interface Survey {
   status: string
   deadline: string | null
   created_at: string | null
+  company_id: string | null
 }
 
 interface Question {
@@ -72,6 +84,8 @@ interface Question {
   type: string
   section_name: string | null
   is_required: boolean | null
+  section_order: number | null
+  question_order: number | null
 }
 
 interface Response {
@@ -111,6 +125,7 @@ export default function FormDetailPage() {
   const { user, profile } = useAuth()
   const surveyId = params.id as string
   const t = useTranslations('FormDetail')
+  const tForms = useTranslations('Forms')
   const tStatus = useTranslations('SurveyStatus')
   const tCommon = useTranslations('Common')
 
@@ -130,6 +145,10 @@ export default function FormDetailPage() {
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([])
   const [assigning, setAssigning] = useState(false)
   const [exporting, setExporting] = useState(false)
+
+  // Delete state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const supabase = createClient()
 
@@ -222,6 +241,23 @@ export default function FormDetailPage() {
 
     fetchData()
   }, [surveyId, supabase])
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      const { error } = await supabase.from('surveys').delete().eq('id', surveyId)
+      if (error) throw error
+      
+      toast.success(tForms('messages.deleteSuccess'))
+      router.push('/forms')
+    } catch (error) {
+      console.error('Error deleting survey:', error)
+      toast.error(tForms('messages.deleteError'))
+    } finally {
+      setDeleting(false)
+      setShowDeleteDialog(false)
+    }
+  }
 
   const mockNotify = async () => {
     setSendingReminder(true)
@@ -566,6 +602,16 @@ export default function FormDetailPage() {
               {t('edit')}
             </Link>
           </Button>
+          {profile?.role === 'admin' && (
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={() => setShowDeleteDialog(true)}
+              className="ml-2"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -791,6 +837,30 @@ export default function FormDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tForms('messages.confirmDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tForms('messages.confirmDeleteDesc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{tCommon('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? tCommon('loading') : tCommon('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

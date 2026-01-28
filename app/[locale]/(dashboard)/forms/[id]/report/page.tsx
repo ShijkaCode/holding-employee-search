@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ArrowLeft, Printer } from 'lucide-react'
@@ -103,6 +104,7 @@ export default function ReportPage() {
   const params = useParams()
   const router = useRouter()
   const surveyId = params.id as string
+  const t = useTranslations('Report')
 
   const [data, setData] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -230,11 +232,11 @@ export default function ReportPage() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Button variant="ghost" onClick={() => window.close()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Хаах
+            {t('close')}
           </Button>
           <Button onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
-            Дахин хэвлэх
+            {t('print')}
           </Button>
         </div>
       </div>
@@ -243,34 +245,34 @@ export default function ReportPage() {
       <div className="print-area p-8 max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">Судалгааны тайлан</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
           <h2 className="text-xl mb-1">{data.survey.title}</h2>
           <p className="text-gray-600">{data.survey.company_name}</p>
           <p className="text-sm text-gray-500 mt-2">
-            Огноо: {new Date().toLocaleDateString('mn-MN')}
+            {t('date')}: {new Date().toLocaleDateString('mn-MN')}
           </p>
         </div>
 
         {/* Statistics */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-3 border-b pb-2">Хариултын статистик</h3>
+          <h3 className="text-lg font-semibold mb-3 border-b pb-2">{t('statisticsTitle')}</h3>
           <table className="w-full border-collapse border border-gray-300 mb-4">
             <tbody>
               <tr className="border-b border-gray-300">
                 <td className="p-2 border-r border-gray-300 bg-gray-50 font-medium w-1/2">
-                  Нийт оролцогч
+                  {t('totalParticipants')}
                 </td>
                 <td className="p-2 text-center">{data.stats.total_assigned}</td>
               </tr>
               <tr className="border-b border-gray-300">
                 <td className="p-2 border-r border-gray-300 bg-gray-50 font-medium">
-                  Бөглөсөн
+                  {t('completed')}
                 </td>
                 <td className="p-2 text-center">{data.stats.total_completed}</td>
               </tr>
               <tr>
                 <td className="p-2 border-r border-gray-300 bg-gray-50 font-medium">
-                  Бөглөлтийн хувь
+                  {t('completionRate')}
                 </td>
                 <td className="p-2 text-center font-semibold">{data.stats.completion_rate}%</td>
               </tr>
@@ -281,13 +283,13 @@ export default function ReportPage() {
         {/* Section Summary */}
         {Object.keys(sectionAverages).length > 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-3 border-b pb-2">Хэсгүүдийн дундаж үнэлгээ</h3>
+            <h3 className="text-lg font-semibold mb-3 border-b pb-2">{t('responseDistribution')}</h3>
             <table className="w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-2 border border-gray-300 text-left">Хэсэг</th>
-                  <th className="p-2 border border-gray-300 text-center w-24">Асуултын тоо</th>
-                  <th className="p-2 border border-gray-300 text-center w-24">Дундаж</th>
+                  <th className="p-2 border border-gray-300 text-left">{t('sectionTitle')}</th>
+                  <th className="p-2 border border-gray-300 text-center w-24">{t('questionCode')}</th>
+                  <th className="p-2 border border-gray-300 text-center w-24">{t('average')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -305,7 +307,7 @@ export default function ReportPage() {
 
         {/* Detailed Results by Section */}
         <div>
-          <h3 className="text-lg font-semibold mb-3 border-b pb-2">Дэлгэрэнгүй үр дүн</h3>
+          <h3 className="text-lg font-semibold mb-3 border-b pb-2">{t('responseDistribution')}</h3>
 
           {Object.entries(sections).map(([sectionName, questions]) => (
             <div key={sectionName} className="mb-6">
@@ -313,10 +315,10 @@ export default function ReportPage() {
               <table className="w-full border-collapse border border-gray-300 text-sm">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="p-2 border border-gray-300 text-left w-16">Код</th>
-                    <th className="p-2 border border-gray-300 text-left">Асуулт</th>
-                    <th className="p-2 border border-gray-300 text-center w-20">Хариулт</th>
-                    <th className="p-2 border border-gray-300 text-center w-20">Дундаж</th>
+                    <th className="p-2 border border-gray-300 text-left w-16">{t('questionCode')}</th>
+                    <th className="p-2 border border-gray-300 text-left">{t('question')}</th>
+                    <th className="p-2 border border-gray-300 text-center w-20">{t('responses')}</th>
+                    <th className="p-2 border border-gray-300 text-center w-20">{t('average')}</th>
                   </tr>
                 </thead>
                 <tbody>

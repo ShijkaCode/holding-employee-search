@@ -60,9 +60,11 @@
         "dashboard": "Dashboard",
         "surveys": "My Surveys",
         "forms": "Forms",
+        "employees": "Employees",
         "reports": "Reports",
         "companies": "Companies",
         "users": "Users",
+        "orgUnits": "Org Units",
         "main": "Main",
         "admin": "Admin",
         "settings": "Settings",
@@ -108,7 +110,13 @@
         "newForm": "New Form",
         "createForm": "Create Form",
         "noForms": "No forms yet",
-        "noFormsDesc": "Create your first survey form to get started"
+        "noFormsDesc": "Create your first survey form to get started",
+        "messages": {
+            "deleteSuccess": "Form deleted successfully",
+            "deleteError": "Failed to delete form",
+            "confirmDeleteTitle": "Delete Form",
+            "confirmDeleteDesc": "Are you sure you want to delete this form? This action cannot be undone and will delete all associated responses."
+        }
     },
     "Dashboard": {
         "title": "Dashboard",
@@ -244,6 +252,7 @@
         "questionsTab": "Questions ({count})",
         "responsesTab": "Responses ({count})",
         "pendingTab": "Pending ({count})",
+        "hierarchyTab": "By Organization",
         "surveyQuestions": "Survey Questions",
         "surveyQuestionsDesc": "All questions in this survey organized by section",
         "noQuestionsAdded": "No questions added yet",
@@ -292,6 +301,52 @@
         "mongolian": "Монгол"
     },
     "Admin": {
+        "orgUnits": {
+            "title": "Organization Units",
+            "subtitle": "Manage your company's organizational structure",
+            "addUnit": "Add Unit",
+            "addRootUnit": "Add Root Unit",
+            "addChildUnit": "Add Child Unit",
+            "editUnit": "Edit Unit",
+            "deleteUnit": "Delete Unit",
+            "addDesc": "Create a new organizational unit",
+            "editDesc": "Update the organizational unit details",
+            "name": "Unit Name",
+            "namePlaceholder": "Enter unit name",
+            "levelType": "Level Type",
+            "levelTypePlaceholder": "e.g., Division, Department, Team",
+            "parentUnit": "Parent Unit",
+            "parentPlaceholder": "Select parent unit",
+            "noParent": "No parent (root level)",
+            "sortOrder": "Sort Order",
+            "sortOrderPlaceholder": "Display order (0, 1, 2...)",
+            "employeeCount": "{count} employees",
+            "noUnits": "No organizational units yet",
+            "noUnitsDesc": "Create your first unit to build your organization structure",
+            "tree": "Organization Tree",
+            "treeDesc": "Hierarchical view of your organization",
+            "levelTypes": {
+                "division": "Division",
+                "department": "Department",
+                "team": "Team",
+                "group": "Group",
+                "unit": "Unit"
+            },
+            "messages": {
+                "created": "Unit created successfully",
+                "updated": "Unit updated successfully",
+                "deleted": "Unit deleted successfully",
+                "createError": "Failed to create unit",
+                "updateError": "Failed to update unit",
+                "deleteError": "Failed to delete unit",
+                "confirmDelete": "Are you sure you want to delete this unit?",
+                "deleteWarning": "This will also delete all child units and unassign employees."
+            },
+            "validation": {
+                "nameRequired": "Unit name is required",
+                "levelTypeRequired": "Level type is required"
+            }
+        },
         "companies": {
             "title": "Companies",
             "subtitle": "Manage companies in your organization",
@@ -335,7 +390,7 @@
                 "user": "User",
                 "role": "Role",
                 "company": "Company",
-                "department": "Department"
+                "department": "Organization Unit"
             },
             "noUsers": "No users found",
             "editUser": "Edit User",
@@ -344,8 +399,9 @@
                 "fullName": "Full Name",
                 "role": "Role",
                 "company": "Company",
-                "department": "Department",
-                "departmentPlaceholder": "e.g., Engineering",
+                "orgUnit": "Organization Unit",
+                "selectOrgUnit": "Select organization unit",
+                "noOrgUnit": "No organization unit",
                 "employeeId": "Employee ID",
                 "employeeIdPlaceholder": "e.g., EMP001",
                 "selectCompany": "Select company",
@@ -365,5 +421,158 @@
                 "nameRequired": "Name is required"
             }
         }
+    },
+    "Employees": {
+        "title": "Employees",
+        "subtitle": "View and manage employees in your organization",
+        "searchPlaceholder": "Search by name, email, or ID...",
+        "filterByUnit": "Filter by unit",
+        "allUnits": "All Units",
+        "table": {
+            "employee": "Employee",
+            "employeeId": "Employee ID",
+            "orgUnit": "Organization Unit",
+            "role": "Role",
+            "surveys": "Surveys",
+            "actions": "Actions"
+        },
+        "noEmployees": "No employees found",
+        "noEmployeesDesc": "No employees match your search criteria",
+        "importEmployees": "Import Employees",
+        "completedSurveys": "{completed}/{total} completed",
+        "viewDetails": "View details",
+        "editEmployee": "Edit employee",
+        "totalEmployees": "{count} employees",
+        "roles": {
+            "admin": "Admin",
+            "hr": "HR",
+            "specialist": "Specialist",
+            "employee": "Employee"
+        }
+    },
+    "Import": {
+        "title": "Import Employees",
+        "subtitle": "Upload an Excel file to import employees and organizational structure",
+        "steps": {
+            "upload": "Upload",
+            "mapping": "Mapping",
+            "preview": "Preview",
+            "import": "Import"
+        },
+        "dragDropTitle": "Drop your Excel file here",
+        "dragDropSubtitle": "Supports .xlsx and .xls files",
+        "selectFile": "Select File",
+        "parsing": "Parsing...",
+        "rowCount": "{count} rows",
+        "columnCount": "{count} columns",
+        "detectedColumns": "Detected columns:",
+        "columnMapping": "Column Mapping",
+        "columnMappingDesc": "Map Excel columns to employee fields and organizational levels",
+        "hierarchyLevels": "Hierarchy Level Types",
+        "hierarchyLevelsDesc": "Define the type name for each organizational level",
+        "level": "Level {n}",
+        "levelTypePlaceholder": "e.g., Division, Department, Team",
+        "presets": "Quick presets:",
+        "continueToPreview": "Continue to Preview",
+        "back": "Back",
+        "startImport": "Start Import",
+        "importing": "Importing data...",
+        "employees": "employees",
+        "more": "more",
+        "noData": "(no data)",
+        "row": "Row {n}",
+        "moreErrors": "more errors",
+        "fields": {
+            "skip": "Skip this column",
+            "employeeName": "Employee Name",
+            "email": "Email",
+            "employeeId": "Employee ID",
+            "hierarchyLevel1": "Hierarchy Level 1",
+            "hierarchyLevel2": "Hierarchy Level 2",
+            "hierarchyLevel3": "Hierarchy Level 3",
+            "hierarchyLevel4": "Hierarchy Level 4",
+            "hierarchyLevel5": "Hierarchy Level 5"
+        },
+        "validation": {
+            "nameRequired": "Please map a column to Employee Name",
+            "hierarchyRecommended": "Consider mapping hierarchy columns to organize employees"
+        },
+        "stats": {
+            "totalEmployees": "Total Employees",
+            "orgUnits": "Org Units Detected",
+            "withOrg": "With Org Unit",
+            "withoutOrg": "Without Org Unit"
+        },
+        "errors": {
+            "title": "{count} Errors Found",
+            "description": "These rows will be skipped during import",
+            "noData": "The file contains no data rows",
+            "parseError": "Failed to parse the Excel file",
+            "invalidFormat": "Please upload a valid Excel file (.xlsx or .xls)",
+            "missingName": "Missing employee name",
+            "noExistingUser": "No existing user found for {email}",
+            "noEmail": "No email address provided"
+        },
+        "preview": {
+            "title": "Import Preview",
+            "description": "Review the data structure before importing",
+            "noData": "No data to preview"
+        },
+        "messages": {
+            "success": "Import completed successfully",
+            "partial": "Import completed with some errors",
+            "failed": "Import failed"
+        },
+        "complete": {
+            "title": "Import Complete",
+            "description": "The import process has finished",
+            "unitsCreated": "Org Units Created",
+            "employeesUpdated": "Employees Updated",
+            "errors": "Errors",
+            "errorDetails": "Error Details:",
+            "done": "Done"
+        }
+    },
+    "HierarchyTable": {
+        "totalEmployees": "Total Employees",
+        "completed": "Completed",
+        "partial": "In Progress",
+        "anonymityRiskUnits": "Anonymity Risk Units",
+        "expandAll": "Expand All",
+        "collapseAll": "Collapse All",
+        "refresh": "Refresh",
+        "employee": "Employee",
+        "status": "Status",
+        "submittedAt": "Submitted At",
+        "completedShort": "completed",
+        "statusCompleted": "Completed",
+        "statusPartial": "In Progress",
+        "statusPending": "Pending",
+        "errorTitle": "Failed to load data",
+        "retry": "Retry",
+        "noData": "No employee data",
+        "noDataDesc": "No employees have been assigned to this survey yet.",
+        "anonymityWarning": "Below anonymity threshold",
+        "anonymityRisk": "Anonymity Risk",
+        "anonymityTooltipTitle": "Anonymity Protection",
+        "anonymityTooltipDesc": "Units with fewer than {threshold} responses are flagged to protect employee anonymity.",
+        "dataHidden": "Data hidden for anonymity"
+    },
+    "Report": {
+        "title": "Survey Report",
+        "close": "Close",
+        "print": "Print Again",
+        "date": "Date",
+        "statisticsTitle": "Response Statistics",
+        "totalParticipants": "Total Participants",
+        "completed": "Completed",
+        "completionRate": "Completion Rate",
+        "sectionTitle": "Section",
+        "questionCode": "Code",
+        "question": "Question",
+        "responseDistribution": "Response Distribution",
+        "average": "Average",
+        "responses": "responses",
+        "noData": "No data available"
     }
 }

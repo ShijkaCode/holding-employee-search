@@ -36,6 +36,57 @@ export type Database = {
         }
         Relationships: []
       }
+      org_units: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          level_depth: number
+          level_type: string
+          name: string
+          parent_id: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          level_depth?: number
+          level_type?: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          level_depth?: number
+          level_type?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_units_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_units_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -46,6 +97,7 @@ export type Database = {
           employee_id: string | null
           full_name: string
           id: string
+          org_unit_id: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
         }
@@ -58,6 +110,7 @@ export type Database = {
           employee_id?: string | null
           full_name: string
           id: string
+          org_unit_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
@@ -70,6 +123,7 @@ export type Database = {
           employee_id?: string | null
           full_name?: string
           id?: string
+          org_unit_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
@@ -79,6 +133,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
             referencedColumns: ["id"]
           },
         ]
@@ -333,6 +394,22 @@ export type Database = {
           },
         ]
       }
+      org_hierarchy: {
+        Row: {
+          ancestors: string[] | null
+          company_id: string | null
+          id: string | null
+          level_depth: number | null
+          level_type: string | null
+          name: string | null
+          parent_id: string | null
+          path_ids: string | null
+          path_names: string | null
+          sort_order: number | null
+          sort_path: number[] | null
+        }
+        Relationships: []
+      }
       survey_stats: {
         Row: {
           company_id: string | null
@@ -367,6 +444,32 @@ export type Database = {
           response_status: Database["public"]["Enums"]["response_status"]
         }[]
       }
+      get_org_unit_descendants: {
+        Args: { p_unit_id: string }
+        Returns: {
+          id: string
+          name: string
+          level_depth: number
+        }[]
+      }
+      get_org_unit_employee_count: {
+        Args: { p_unit_id: string }
+        Returns: number
+      }
+      get_org_unit_path: {
+        Args: { p_unit_id: string }
+        Returns: string
+      }
+      get_org_unit_survey_stats: {
+        Args: { p_survey_id: string; p_unit_id: string }
+        Returns: {
+          total_assigned: number
+          total_completed: number
+          total_partial: number
+          total_pending: number
+          completion_rate: number
+        }[]
+      }
       get_user_company_id: { Args: Record<string, never>; Returns: string }
       get_user_role: {
         Args: Record<string, never>
@@ -393,4 +496,13 @@ export type Database = {
 }
 
 export type Tables<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"]
+export type Views<T extends keyof Database["public"]["Views"]> = Database["public"]["Views"][T]["Row"]
 export type Enums<T extends keyof Database["public"]["Enums"]> = Database["public"]["Enums"][T]
+
+// Convenience types for org_units
+export type OrgUnit = Tables<"org_units">
+export type OrgUnitInsert = Database["public"]["Tables"]["org_units"]["Insert"]
+export type OrgUnitUpdate = Database["public"]["Tables"]["org_units"]["Update"]
+
+// Convenience type for org_hierarchy view
+export type OrgHierarchy = Views<"org_hierarchy">
