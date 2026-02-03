@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/select'
 import { useTranslations } from 'next-intl'
 import type { OrgUnitNode } from './org-tree-view'
+import { useEffect, useState } from 'react'
+import { AlertCircle } from 'lucide-react'
 
 const orgUnitSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -41,26 +43,16 @@ interface FlatOrgUnit {
 
 interface OrgUnitFormProps {
   defaultValues?: Partial<OrgUnitFormValues>
-  flatUnits: FlatOrgUnit[] // For parent selection
-  excludeId?: string // Exclude current unit and its descendants from parent options
+  flatUnits: FlatOrgUnit[]
+  excludeId?: string
   onSubmit: (data: OrgUnitFormValues) => Promise<void>
   onCancel: () => void
   isSubmitting?: boolean
   mode: 'create' | 'edit'
+  existingNames?: string[]
 }
 
-const LEVEL_TYPE_PRESETS = [
-  'Division',
-  'Department',
-  'Team',
-  'Group',
-  'Unit',
-  'Газар',
-  'Алба',
-  'Хэлтэс',
-  'Баг',
-  'Тасаг',
-]
+const LEVEL_TYPE_KEYS = ['division', 'department', 'section', 'team', 'group'] as const
 
 export function OrgUnitForm({
   defaultValues,
@@ -70,9 +62,11 @@ export function OrgUnitForm({
   onCancel,
   isSubmitting = false,
   mode,
+  existingNames = [],
 }: OrgUnitFormProps) {
   const t = useTranslations('Admin.orgUnits')
   const tCommon = useTranslations('Common')
+  const [duplicateError, setDuplicateError] = useState<string | null>(null)
 
   const form = useForm<OrgUnitFormValues>({
     resolver: zodResolver(orgUnitSchema),
@@ -84,14 +78,31 @@ export function OrgUnitForm({
     },
   })
 
-  // Filter out the current unit and its descendants from parent options
+  const watchedName = form.watch('name')
+
+  // Real-time duplicate check
+  useEffect(() => {
+    const trimmedName = watchedName?.trim().toLowerCase()
+    if (!trimmedName) {
+      setDuplicateError(null)
+      return
+    }
+
+    const isDuplicate = existingNames.some(
+      (name) => name.toLowerCase() === trimmedName &&
+      (mode === 'create' || name.toLowerCase() !== defaultValues?.name?.toLowerCase())
+    )
+
+    setDuplicateError(isDuplicate ? 'Энэ нэртэй нэгж аль хэдийн байна' : null)
+  }, [watchedName, existingNames, mode, defaultValues?.name])
+
   const availableParents = flatUnits.filter((unit) => {
     if (!excludeId) return true
-    // Exclude the unit itself and any unit whose path contains the excluded id
     return unit.id !== excludeId
   })
 
   const handleSubmit = async (data: OrgUnitFormValues) => {
+    if (duplicateError) return
     await onSubmit(data)
   }
 
@@ -107,6 +118,12 @@ export function OrgUnitForm({
               <FormControl>
                 <Input placeholder={t('namePlaceholder')} {...field} />
               </FormControl>
+              {duplicateError && (
+                <p className="flex items-center gap-1.5 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  {duplicateError}
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -125,16 +142,16 @@ export function OrgUnitForm({
                     {...field}
                   />
                   <div className="flex flex-wrap gap-1">
-                    {LEVEL_TYPE_PRESETS.map((preset) => (
+                    {LEVEL_TYPE_KEYS.map((key) => (
                       <Button
-                        key={preset}
+                        key={key}
                         type="button"
                         variant="outline"
                         size="sm"
                         className="h-7 text-xs"
-                        onClick={() => form.setValue('level_type', preset)}
+                        onClick={() => form.setValue('level_type', t(`levelTypes.${key}`))}
                       >
-                        {preset}
+                        {t(`levelTypes.${key}`)}
                       </Button>
                     ))}
                   </div>
@@ -204,7 +221,7 @@ export function OrgUnitForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             {tCommon('cancel')}
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || !!duplicateError}>
             {isSubmitting
               ? tCommon('loading')
               : mode === 'create'

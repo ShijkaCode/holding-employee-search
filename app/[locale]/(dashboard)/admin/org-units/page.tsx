@@ -21,6 +21,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
@@ -28,6 +35,11 @@ import { Plus, Network } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { OrgTreeView, type OrgUnitNode } from '@/components/org-units/org-tree-view'
 import { OrgUnitForm, type OrgUnitFormValues } from '@/components/org-units/org-unit-form'
+
+interface Company {
+  id: string
+  name: string
+}
 
 interface FlatOrgUnit {
   id: string
@@ -46,6 +58,8 @@ interface RawOrgUnit {
 }
 
 export default function OrgUnitsPage() {
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
   const [treeData, setTreeData] = useState<OrgUnitNode[]>([])
   const [flatUnits, setFlatUnits] = useState<FlatOrgUnit[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,17 +75,42 @@ export default function OrgUnitsPage() {
   const tCommon = useTranslations('Common')
 
   const supabase = createClient()
+  const isAdmin = profile?.role === 'admin'
+
+  // Fetch companies for admin
+  useEffect(() => {
+    if (!profile) return
+
+    const fetchCompanies = async () => {
+      if (isAdmin) {
+        const { data } = await supabase.from('companies').select('id, name').order('name')
+        setCompanies(data || [])
+        if (data && data.length > 0) {
+          setSelectedCompanyId(data[0].id)
+        }
+      } else if (profile.company_id) {
+        setSelectedCompanyId(profile.company_id)
+        const { data } = await supabase
+          .from('companies')
+          .select('id, name')
+          .eq('id', profile.company_id)
+          .single()
+        if (data) setCompanies([data])
+      }
+    }
+    fetchCompanies()
+  }, [isAdmin, profile, supabase])
 
   const fetchData = useCallback(async () => {
-    if (!profile?.company_id) return
+    if (!selectedCompanyId) return
 
     setLoading(true)
 
-    // Fetch all org units
+    // Fetch all org units for selected company
     const { data: unitsData, error: unitsError } = await supabase
       .from('org_units')
       .select('*')
-      .eq('company_id', profile.company_id)
+      .eq('company_id', selectedCompanyId)
       .order('sort_order')
       .order('name')
 
@@ -86,14 +125,14 @@ export default function OrgUnitsPage() {
     const { data: hierarchyData } = await supabase
       .from('org_hierarchy')
       .select('id, name, path_names, level_depth')
-      .eq('company_id', profile.company_id)
+      .eq('company_id', selectedCompanyId)
       .order('path_names')
 
     // Fetch employee counts per unit
     const { data: employeeCounts } = await supabase
       .from('profiles')
       .select('org_unit_id')
-      .eq('company_id', profile.company_id)
+      .eq('company_id', selectedCompanyId)
       .not('org_unit_id', 'is', null)
 
     // Build count map
@@ -137,7 +176,7 @@ export default function OrgUnitsPage() {
     setFlatUnits(validFlatUnits)
 
     setLoading(false)
-  }, [profile?.company_id, supabase, t])
+  }, [selectedCompanyId, supabase, t])
 
   useEffect(() => {
     fetchData()
@@ -159,7 +198,7 @@ export default function OrgUnitsPage() {
   }
 
   const handleCreateSubmit = async (data: OrgUnitFormValues) => {
-    if (!profile?.company_id) return
+    if (!selectedCompanyId) return
 
     setIsSubmitting(true)
     try {
@@ -173,7 +212,7 @@ export default function OrgUnitsPage() {
       }
 
       const { error } = await supabase.from('org_units').insert({
-        company_id: profile.company_id,
+        company_id: selectedCompanyId,
         name: data.name,
         level_type: data.level_type,
         parent_id: data.parent_id,
@@ -181,7 +220,13 @@ export default function OrgUnitsPage() {
         sort_order: data.sort_order,
       })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('Энэ нэртэй нэгж аль хэдийн байна')
+          return
+        }
+        throw error
+      }
 
       toast.success(t('messages.created'))
       setShowAddDialog(false)
@@ -220,7 +265,13 @@ export default function OrgUnitsPage() {
         })
         .eq('id', selectedUnit.id)
 
-      if (error) throw error
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('Энэ нэртэй нэгж аль хэдийн байна')
+          return
+        }
+        throw error
+      }
 
       toast.success(t('messages.updated'))
       setShowEditDialog(false)
@@ -271,7 +322,10 @@ export default function OrgUnitsPage() {
     return findParent(treeData, unitId, null)
   }
 
-  if (loading) {
+  // Get selected company name
+  const selectedCompanyName = companies.find(c => c.id === selectedCompanyId)?.name
+
+  if (loading && !selectedCompanyId) {
     return (
       <div className="p-6 space-y-6">
         <Skeleton className="h-8 w-48" />
@@ -288,10 +342,26 @@ export default function OrgUnitsPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
-        <Button onClick={() => handleAddChild(null)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('addRootUnit')}
-        </Button>
+        <div className="flex items-center gap-3">
+          {isAdmin && companies.length > 1 && (
+            <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Компани сонгох" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button onClick={() => handleAddChild(null)}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('addRootUnit')}
+          </Button>
+        </div>
       </div>
 
       {/* Tree View */}
@@ -300,18 +370,33 @@ export default function OrgUnitsPage() {
           <div className="flex items-center gap-2">
             <Network className="h-5 w-5 text-muted-foreground" />
             <div>
-              <CardTitle>{t('tree')}</CardTitle>
+              <CardTitle>
+                {t('tree')}
+                {selectedCompanyName && isAdmin && (
+                  <span className="ml-2 text-base font-normal text-muted-foreground">
+                    — {selectedCompanyName}
+                  </span>
+                )}
+              </CardTitle>
               <CardDescription>{t('treeDesc')}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <OrgTreeView
-            nodes={treeData}
-            onAddChild={handleAddChild}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-3/4 ml-6" />
+              <Skeleton className="h-10 w-2/3 ml-12" />
+            </div>
+          ) : (
+            <OrgTreeView
+              nodes={treeData}
+              onAddChild={handleAddChild}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -327,6 +412,7 @@ export default function OrgUnitsPage() {
               parent_id: parentIdForNew,
             }}
             flatUnits={flatUnits}
+            existingNames={flatUnits.map((u) => u.name)}
             onSubmit={handleCreateSubmit}
             onCancel={() => {
               setShowAddDialog(false)
@@ -354,6 +440,7 @@ export default function OrgUnitsPage() {
                 sort_order: selectedUnit.sort_order || 0,
               }}
               flatUnits={flatUnits}
+              existingNames={flatUnits.map((u) => u.name)}
               excludeId={selectedUnit.id}
               onSubmit={handleEditSubmit}
               onCancel={() => {
