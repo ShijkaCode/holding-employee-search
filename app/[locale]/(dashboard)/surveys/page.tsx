@@ -114,11 +114,11 @@ export default function SurveysPage() {
   // Show loading state while data is loading
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid gap-4 md:grid-cols-2">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <Skeleton className="h-6 sm:h-8 w-36 sm:w-48" />
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-40" />
+            <Skeleton key={i} className="h-32 sm:h-40" />
           ))}
         </div>
       </div>
@@ -126,54 +126,58 @@ export default function SurveysPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
           {t('subtitle')}
         </p>
       </div>
 
       {pendingSurveys.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">{t('pending')}</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-base sm:text-lg font-semibold">{t('pending')}</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
             {pendingSurveys.map((survey) => (
               <Card key={survey.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(survey)}
-                      <div>
-                        <CardTitle className="text-lg">
+                <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+                      <div className="shrink-0 mt-0.5">
+                        {getStatusIcon(survey)}
+                      </div>
+                      <div className="min-w-0">
+                        <CardTitle className="text-base sm:text-lg line-clamp-2">
                           {survey.survey?.title}
                         </CardTitle>
                         {survey.survey?.description && (
-                          <CardDescription className="mt-1">
+                          <CardDescription className="mt-1 text-xs sm:text-sm line-clamp-2">
                             {survey.survey.description}
                           </CardDescription>
                         )}
                       </div>
                     </div>
-                    {getStatusBadge(survey)}
+                    <div className="shrink-0">
+                      {getStatusBadge(survey)}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="p-3 sm:p-4 pt-0 space-y-3 sm:space-y-4">
                   {survey.survey?.deadline && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span>
                         {tCommon('due')} {format(new Date(survey.survey.deadline), 'MMM d, yyyy')}
                       </span>
                       {isPast(new Date(survey.survey.deadline)) && (
-                        <Badge variant="destructive" className="ml-2">
+                        <Badge variant="destructive" className="text-xs">
                           {t('status.overdue')}
                         </Badge>
                       )}
                     </div>
                   )}
 
-                  <Button asChild className="w-full">
+                  <Button asChild className="w-full h-10 sm:h-9 text-sm">
                     <Link href={`/surveys/${survey.survey?.id}`}>
                       {survey.response?.status === 'partial'
                         ? t('continueSurvey')
@@ -188,22 +192,22 @@ export default function SurveysPage() {
       )}
 
       {completedSurveys.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">{t('completed')}</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-base sm:text-lg font-semibold">{t('completed')}</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
             {completedSurveys.map((survey) => (
               <Card key={survey.id} className="opacity-75">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <div>
-                        <CardTitle className="text-lg">
+                <CardHeader className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <CardTitle className="text-base sm:text-lg line-clamp-2">
                           {survey.survey?.title}
                         </CardTitle>
                         {survey.response?.submitted_at && (
-                          <CardDescription className="mt-1">
-                            {tCommon('completedOn')}
+                          <CardDescription className="mt-1 text-xs sm:text-sm">
+                            {tCommon('completedOn')}{' '}
                             {format(
                               new Date(survey.response.submitted_at),
                               'MMM d, yyyy'
@@ -212,7 +216,7 @@ export default function SurveysPage() {
                         )}
                       </div>
                     </div>
-                    <Badge className="bg-green-500">{t('status.completed')}</Badge>
+                    <Badge className="bg-green-500 shrink-0 text-xs">{t('status.completed')}</Badge>
                   </div>
                 </CardHeader>
               </Card>
@@ -222,10 +226,10 @@ export default function SurveysPage() {
       )}
 
       {surveys.length === 0 && (
-        <Card className="flex flex-col items-center justify-center py-12">
-          <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
-          <CardTitle className="mb-2">{t('noSurveys')}</CardTitle>
-          <CardDescription>
+        <Card className="flex flex-col items-center justify-center py-8 sm:py-12 px-4">
+          <ClipboardList className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+          <CardTitle className="mb-2 text-center text-base sm:text-lg">{t('noSurveys')}</CardTitle>
+          <CardDescription className="text-center text-sm">
             {t('noSurveysDesc')}
           </CardDescription>
         </Card>

@@ -74,35 +74,35 @@ export default function SettingsPage() {
 
   const initials = profile?.full_name
     ?.split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase() || 'U'
 
   return (
-    <div className="p-6 space-y-6 max-w-2xl">
+    <div className="page-container max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
           {t('subtitle')}
         </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>{t('profile')}</CardTitle>
-          <CardDescription>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base sm:text-lg">{t('profile')}</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             {t('profileDesc')}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
+        <CardContent className="space-y-4 sm:space-y-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Avatar className="h-14 w-14 sm:h-20 sm:w-20">
               <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="text-xl">{initials}</AvatarFallback>
+              <AvatarFallback className="text-lg sm:text-xl">{initials}</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold">{profile?.full_name}</h3>
-              <p className="text-sm text-muted-foreground capitalize">
+              <h3 className="font-semibold text-sm sm:text-base">{profile?.full_name}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground capitalize">
                 {profile?.role}
               </p>
             </div>

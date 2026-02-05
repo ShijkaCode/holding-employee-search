@@ -7,6 +7,9 @@ export async function GET(
 ) {
   try {
     const { id: surveyId } = await params
+    const { searchParams } = new URL(request.url)
+    const companyIdFilter = searchParams.get('companyId')
+
     const supabase = await createClient()
 
     // Check authentication
@@ -27,15 +30,15 @@ export async function GET(
       return NextResponse.json({ error: 'User profile not found' }, { status: 403 })
     }
 
-    // Verify user has appropriate role (HR or admin)
-    if (!['admin', 'hr'].includes(profile.role)) {
+    // Verify user has appropriate role
+    if (!['admin', 'hr', 'specialist'].includes(profile.role)) {
       return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 })
     }
 
     // Fetch survey details
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
-      .select('id, title, company_id')
+      .select('id, title, company_id, scope')
       .eq('id', surveyId)
       .single()
 
@@ -44,20 +47,33 @@ export async function GET(
       return NextResponse.json({ error: 'Survey not found' }, { status: 404 })
     }
 
-    // Verify user's company matches survey's company
-    if (profile.company_id !== survey.company_id) {
-      return NextResponse.json({ error: 'Forbidden: Access denied to this survey' }, { status: 403 })
+    // Permission check based on survey scope
+    if (survey.scope === 'holding') {
+      // Only admin and specialist can export holding surveys
+      if (!['admin', 'specialist'].includes(profile.role)) {
+        return NextResponse.json({ error: 'Forbidden: Only administrators and specialists can export holding surveys' }, { status: 403 })
+      }
+    } else {
+      // For company surveys, verify user's company matches
+      if (profile.role === 'hr' && profile.company_id !== survey.company_id) {
+        return NextResponse.json({ error: 'Forbidden: Access denied to this survey' }, { status: 403 })
+      }
     }
+
+    // Determine which company to filter by
+    const targetCompanyId = companyIdFilter || survey.company_id
 
     // Fetch company name
     let companyName = ''
-    if (survey.company_id) {
+    if (targetCompanyId) {
       const { data: company } = await supabase
         .from('companies')
         .select('name')
-        .eq('id', survey.company_id)
+        .eq('id', targetCompanyId)
         .single()
       companyName = company?.name || ''
+    } else if (survey.scope === 'holding') {
+      companyName = 'All Companies'
     }
 
     // Fetch questions ordered by section and question order
@@ -74,11 +90,18 @@ export async function GET(
     }
 
     // Fetch responses (without join to avoid RLS issues)
-    const { data: responses, error: responsesError } = await supabase
+    let responsesQuery = supabase
       .from('survey_responses')
-      .select('id, employee_id, answers, status, submitted_at')
+      .select('id, employee_id, company_id, answers, status, submitted_at')
       .eq('survey_id', surveyId)
       .eq('status', 'completed')
+
+    // Filter by company if specified
+    if (targetCompanyId) {
+      responsesQuery = responsesQuery.eq('company_id', targetCompanyId)
+    }
+
+    const { data: responses, error: responsesError } = await responsesQuery
 
     if (responsesError) {
       console.error('Responses error:', responsesError)
@@ -100,12 +123,12 @@ export async function GET(
       let orgPathsMap: Record<string, string> = {}
 
       if (orgUnitIds.length > 0) {
-        const { data: orgHierarchy } = await supabase
+        const { data: orgHierarchy } = await (supabase as any)
           .from('org_hierarchy')
           .select('id, path_names')
           .in('id', orgUnitIds)
 
-        orgHierarchy?.forEach(org => {
+        orgHierarchy?.forEach((org: { id: string; path_names: string }) => {
           orgPathsMap[org.id] = org.path_names
         })
       }

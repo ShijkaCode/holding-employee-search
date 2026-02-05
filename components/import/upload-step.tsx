@@ -8,11 +8,30 @@ import { Upload, FileSpreadsheet, X, AlertCircle } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useTranslations } from 'next-intl'
 
+export interface ParsedRow {
+  rowNumber: number
+  employee_id: string
+  full_name: string
+  email: string
+  org_unit_name: string
+  phone_number?: string
+  data: Record<string, string>
+  errors: string[]
+  warnings: string[]
+}
+
 export interface ParsedExcelData {
   headers: string[]
-  rows: Record<string, string>[]
+  rows: ParsedRow[]
+  summary: {
+    total: number
+    valid: number
+    invalid: number
+    duplicates: number
+  }
+  orgUnits: string[]
   fileName: string
-  sheetName: string
+  sheetName?: string
 }
 
 interface UploadStepProps {
@@ -33,42 +52,26 @@ export function UploadStep({ onDataParsed, existingData }: UploadStepProps) {
     setError(null)
 
     try {
-      const arrayBuffer = await file.arrayBuffer()
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+      // Send file to API for server-side parsing and validation
+      const formData = new FormData()
+      formData.append('file', file)
 
-      // Get first sheet
-      const sheetName = workbook.SheetNames[0]
-      const sheet = workbook.Sheets[sheetName]
+      const response = await fetch('/api/employees/parse-excel', {
+        method: 'POST',
+        body: formData,
+      })
 
-      // Convert to JSON with headers (header: 1 returns array of arrays)
-      const jsonData = XLSX.utils.sheet_to_json(sheet, {
-        header: 1,
-        defval: '',
-      }) as unknown[][]
+      const result = await response.json()
 
-      if (jsonData.length < 2) {
-        throw new Error(t('errors.noData'))
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || t('errors.parseError'))
       }
 
-      // First row is headers
-      const headers = (jsonData[0] as string[]).map((h, i) =>
-        String(h || `Column ${i + 1}`).trim()
-      )
-
-      // Rest are data rows
-      const rows = jsonData.slice(1).map((row) => {
-        const rowObj: Record<string, string> = {}
-        headers.forEach((header, i) => {
-          rowObj[header] = String((row as unknown[])[i] || '').trim()
-        })
-        return rowObj
-      }).filter(row => Object.values(row).some(v => v !== '')) // Skip empty rows
-
       const data: ParsedExcelData = {
-        headers,
-        rows,
+        ...result.data,
+        headers: result.data.columns || result.data.headers || [], // Handle both keys
         fileName: file.name,
-        sheetName,
+        sheetName: result.data.sheetName || 'Sheet1',
       }
 
       setParsedData(data)
@@ -108,6 +111,10 @@ export function UploadStep({ onDataParsed, existingData }: UploadStepProps) {
   }, [])
 
   if (parsedData) {
+    const { summary } = parsedData
+    const hasErrors = summary.invalid > 0
+    const hasWarnings = summary.duplicates > 0
+
     return (
       <Card>
         <CardContent className="pt-6">
@@ -126,6 +133,50 @@ export function UploadStep({ onDataParsed, existingData }: UploadStepProps) {
             </Button>
           </div>
 
+          {/* Validation Summary */}
+          <div className="mt-4 grid grid-cols-4 gap-3">
+            <div className="p-3 bg-secondary rounded-lg text-center">
+              <p className="text-2xl font-bold">{summary.total}</p>
+              <p className="text-xs text-muted-foreground">{t('total')}</p>
+            </div>
+            <div className="p-3 bg-green-50 text-green-700 rounded-lg text-center">
+              <p className="text-2xl font-bold">{summary.valid}</p>
+              <p className="text-xs">{t('valid')}</p>
+            </div>
+            <div className="p-3 bg-red-50 text-red-700 rounded-lg text-center">
+              <p className="text-2xl font-bold">{summary.invalid}</p>
+              <p className="text-xs">{t('invalid')}</p>
+            </div>
+            <div className="p-3 bg-amber-50 text-amber-700 rounded-lg text-center">
+              <p className="text-2xl font-bold">{summary.duplicates}</p>
+              <p className="text-xs">{t('duplicates')}</p>
+            </div>
+          </div>
+
+          {/* Error/Warning Messages */}
+          {(hasErrors || hasWarnings) && (
+            <div className="mt-4 space-y-2">
+              {hasErrors && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2 text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">{t('validationErrors')}</p>
+                    <p className="text-xs mt-1">{t('reviewErrors')}</p>
+                  </div>
+                </div>
+              )}
+              {hasWarnings && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-700">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">{t('duplicatesFound')}</p>
+                    <p className="text-xs mt-1">{t('reviewDuplicates')}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-4">
             <p className="text-sm font-medium mb-2">{t('detectedColumns')}</p>
             <div className="flex flex-wrap gap-2">
@@ -139,6 +190,28 @@ export function UploadStep({ onDataParsed, existingData }: UploadStepProps) {
               ))}
             </div>
           </div>
+
+          {/* Org Units Found */}
+          {parsedData.orgUnits && parsedData.orgUnits.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium mb-2">{t('orgUnitsFound', { count: parsedData.orgUnits.length })}</p>
+              <div className="flex flex-wrap gap-2 max-h-24 overflow-auto">
+                {parsedData.orgUnits.slice(0, 20).map((unit, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded text-sm"
+                  >
+                    {unit}
+                  </span>
+                ))}
+                {parsedData.orgUnits.length > 20 && (
+                  <span className="px-2 py-1 text-sm text-muted-foreground">
+                    +{parsedData.orgUnits.length - 20} more
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     )

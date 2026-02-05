@@ -75,7 +75,7 @@ export function useHierarchyData(
           .order('name'),
 
         // Get assignments with profiles (hint the foreign key relationship)
-        supabase
+        (supabase as any)
           .from('survey_assignments')
           .select(`
             employee_id,

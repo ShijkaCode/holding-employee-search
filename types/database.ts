@@ -89,41 +89,59 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activation_token: string | null
+          auth_method: string | null
           avatar_url: string | null
           company_id: string | null
           created_at: string | null
           department: string | null
           email: string | null
           employee_id: string | null
+          first_login_at: string | null
           full_name: string
           id: string
+          invitation_status: string | null
+          last_login_at: string | null
           org_unit_id: string | null
+          phone_number: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
         }
         Insert: {
+          activation_token?: string | null
+          auth_method?: string | null
           avatar_url?: string | null
           company_id?: string | null
           created_at?: string | null
           department?: string | null
           email?: string | null
           employee_id?: string | null
+          first_login_at?: string | null
           full_name: string
           id: string
+          invitation_status?: string | null
+          last_login_at?: string | null
           org_unit_id?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
         Update: {
+          activation_token?: string | null
+          auth_method?: string | null
           avatar_url?: string | null
           company_id?: string | null
           created_at?: string | null
           department?: string | null
           email?: string | null
           employee_id?: string | null
+          first_login_at?: string | null
           full_name?: string
           id?: string
+          invitation_status?: string | null
+          last_login_at?: string | null
           org_unit_id?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
@@ -172,29 +190,97 @@ export type Database = {
           reminder_count?: number | null
           survey_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "survey_assignments_assigned_by_fkey"
-            columns: ["assigned_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "survey_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "survey_assignments_survey_id_fkey"
-            columns: ["survey_id"]
-            isOneToOne: false
-            referencedRelation: "surveys"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      survey_company_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          company_id: string
+          created_at: string | null
+          id: string
+          survey_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          survey_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          survey_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      survey_invitations: {
+        Row: {
+          assignment_id: string
+          bounce_reason: string | null
+          clicked_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          delivered_at: string | null
+          employee_id: string
+          error_message: string | null
+          id: string
+          last_retry_at: string | null
+          method: string
+          retry_count: number | null
+          sent_at: string | null
+          sent_to: string
+          status: string | null
+          survey_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assignment_id: string
+          bounce_reason?: string | null
+          clicked_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          employee_id: string
+          error_message?: string | null
+          id?: string
+          last_retry_at?: string | null
+          method: string
+          retry_count?: number | null
+          sent_at?: string | null
+          sent_to: string
+          status?: string | null
+          survey_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          bounce_reason?: string | null
+          clicked_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          employee_id?: string
+          error_message?: string | null
+          id?: string
+          last_retry_at?: string | null
+          method?: string
+          retry_count?: number | null
+          sent_at?: string | null
+          sent_to?: string
+          status?: string | null
+          survey_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       survey_questions: {
         Row: {
@@ -245,15 +331,7 @@ export type Database = {
           type?: Database["public"]["Enums"]["question_type"]
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "survey_questions_survey_id_fkey"
-            columns: ["survey_id"]
-            isOneToOne: false
-            referencedRelation: "surveys"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       survey_responses: {
         Row: {
@@ -295,38 +373,18 @@ export type Database = {
           survey_id?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "survey_responses_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "survey_responses_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "survey_responses_survey_id_fkey"
-            columns: ["survey_id"]
-            isOneToOne: false
-            referencedRelation: "surveys"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       surveys: {
         Row: {
           company_id: string | null
           created_at: string | null
           created_by: string | null
+          created_by_role: string | null
           deadline: string | null
           description: string | null
           id: string
+          scope: string | null
           settings: Json | null
           status: Database["public"]["Enums"]["survey_status"]
           title: string
@@ -336,9 +394,11 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          created_by_role?: string | null
           deadline?: string | null
           description?: string | null
           id?: string
+          scope?: string | null
           settings?: Json | null
           status?: Database["public"]["Enums"]["survey_status"]
           title: string
@@ -348,133 +408,85 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          created_by_role?: string | null
           deadline?: string | null
           description?: string | null
           id?: string
+          scope?: string | null
           settings?: Json | null
           status?: Database["public"]["Enums"]["survey_status"]
           title?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "surveys_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "surveys_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-    }
-    Views: {
-      department_stats: {
+      survey_sentiment_analyses: {
         Row: {
-          company_id: string | null
-          completion_rate: number | null
-          department: string | null
-          survey_id: string | null
-          total_assigned: number | null
-          total_completed: number | null
+          id: string
+          survey_id: string
+          status: string
+          request_sent_at: string | null
+          completed_at: string | null
+          error_message: string | null
+          results: Json | null
+          created_at: string | null
+          updated_at: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "surveys_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      org_hierarchy: {
-        Row: {
-          ancestors: string[] | null
-          company_id: string | null
-          id: string | null
-          level_depth: number | null
-          level_type: string | null
-          name: string | null
-          parent_id: string | null
-          path_ids: string | null
-          path_names: string | null
-          sort_order: number | null
-          sort_path: number[] | null
+        Insert: {
+          id?: string
+          survey_id: string
+          status?: string
+          request_sent_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          results?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          survey_id?: string
+          status?: string
+          request_sent_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          results?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
-      survey_stats: {
+    }
+    Views: {
+      holding_survey_company_stats: {
         Row: {
           company_id: string | null
+          company_name: string | null
           completion_rate: number | null
-          deadline: string | null
-          status: Database["public"]["Enums"]["survey_status"] | null
           survey_id: string | null
-          title: string | null
           total_assigned: number | null
           total_completed: number | null
           total_partial: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "surveys_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      org_hierarchy: {
+        Row: {
+          id: string
+          company_id: string
+          name: string
+          parent_id: string | null
+          level_type: string
+          sort_order: number | null
+          level_depth: number
+          path_names: string
+          path_ids: string[]
+        }
+        Relationships: []
       }
     }
     Functions: {
-      get_incomplete_survey_employees: {
-        Args: { p_survey_id: string }
-        Returns: {
-          department: string
-          email: string
-          employee_id: string
-          full_name: string
-          response_status: Database["public"]["Enums"]["response_status"]
-        }[]
-      }
-      get_org_unit_descendants: {
-        Args: { p_unit_id: string }
-        Returns: {
-          id: string
-          name: string
-          level_depth: number
-        }[]
-      }
-      get_org_unit_employee_count: {
-        Args: { p_unit_id: string }
-        Returns: number
-      }
-      get_org_unit_path: {
-        Args: { p_unit_id: string }
-        Returns: string
-      }
-      get_org_unit_survey_stats: {
-        Args: { p_survey_id: string; p_unit_id: string }
-        Returns: {
-          total_assigned: number
-          total_completed: number
-          total_partial: number
-          total_pending: number
-          completion_rate: number
-        }[]
-      }
-      get_user_company_id: { Args: Record<string, never>; Returns: string }
-      get_user_role: {
-        Args: Record<string, never>
-        Returns: Database["public"]["Enums"]["user_role"]
-      }
+      [_ in never]: never
     }
     Enums: {
       question_type:
@@ -495,14 +507,65 @@ export type Database = {
   }
 }
 
-export type Tables<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"]
-export type Views<T extends keyof Database["public"]["Views"]> = Database["public"]["Views"][T]["Row"]
-export type Enums<T extends keyof Database["public"]["Enums"]> = Database["public"]["Enums"][T]
+// Helper types for easier access to table row types
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
+export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
+export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
+export type Enums<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T]
 
-// Convenience types for org_units
-export type OrgUnit = Tables<"org_units">
-export type OrgUnitInsert = Database["public"]["Tables"]["org_units"]["Insert"]
-export type OrgUnitUpdate = Database["public"]["Tables"]["org_units"]["Update"]
+// Sentiment Analysis Types
+export type SentimentAnalysisStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
-// Convenience type for org_hierarchy view
-export type OrgHierarchy = Views<"org_hierarchy">
+export interface SurveyExportQuestion {
+  code: string
+  text: string
+  type: Enums<'question_type'>
+  section: string | null
+  options: string[] | null
+}
+
+export interface SurveyExportAnswer {
+  question_code: string
+  question_type: Enums<'question_type'>
+  value: string | string[] | null
+  value_type: 'numeric' | 'text' | 'selection' | 'multi_selection' | 'date'
+}
+
+export interface SurveyExportResponse {
+  id: string
+  submitted_at: string | null
+  answers: SurveyExportAnswer[]
+}
+
+export interface SurveyExportJSON {
+  survey: {
+    id: string
+    title: string
+    description: string | null
+    created_at: string | null
+  }
+  questions: SurveyExportQuestion[]
+  responses: SurveyExportResponse[]
+  metadata: {
+    total_responses: number
+    export_date: string
+    callback_url: string
+    analysis_id: string
+  }
+}
+
+export interface SentimentAnalysisResult {
+  analysis_id: string
+  survey_id: string
+  overall_sentiment: 'positive' | 'neutral' | 'negative' | 'mixed'
+  confidence_score: number
+  summary: string
+  question_sentiments: {
+    question_code: string
+    sentiment: 'positive' | 'neutral' | 'negative' | 'mixed'
+    key_themes: string[]
+    sample_responses?: string[]
+  }[]
+  recommendations?: string[]
+  processed_at: string
+}

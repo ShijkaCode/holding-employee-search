@@ -79,6 +79,9 @@ export function MappingStep({ excelData, onConfigChange, existingConfig }: Mappi
       return existingConfig.mappings
     }
     // Auto-detect common column names
+    if (!excelData?.headers) {
+      return []
+    }
     return excelData.headers.map(header => {
       const lowerHeader = header.toLowerCase()
       let targetField: MappingTarget = 'skip'
@@ -141,7 +144,7 @@ export function MappingStep({ excelData, onConfigChange, existingConfig }: Mappi
   const getSampleValues = useCallback((column: string): string[] => {
     const values = new Set<string>()
     for (const row of excelData.rows.slice(0, 10)) {
-      const val = row[column]
+      const val = row.data[column]
       if (val) values.add(val)
       if (values.size >= 3) break
     }

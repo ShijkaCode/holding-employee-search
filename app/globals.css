@@ -51,7 +51,7 @@
   --sidebar-ring: #3b82f6;
 
   /* Fonts */
-  --font-sans: Inter, sans-serif;
+  --font-sans: var(--font-inter), Inter, sans-serif;
   --font-serif: "Source Serif 4", serif;
   --font-mono: "JetBrains Mono", monospace;
 
@@ -193,5 +193,92 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* =========================================================
+   Responsive Utilities
+========================================================= */
+@layer components {
+  /* Page container with responsive padding */
+  .page-container {
+    @apply p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6;
+  }
+
+  /* Responsive button group that wraps on small screens */
+  .button-group-responsive {
+    @apply flex flex-wrap gap-2;
+  }
+
+  /* Hide text on small screens, show icon only */
+  .btn-text-responsive {
+    @apply hidden sm:inline;
+  }
+
+  /* Responsive header that stacks on mobile */
+  .header-responsive {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  /* Responsive grid for stats cards */
+  .stats-grid {
+    @apply grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  /* Responsive grid for content cards */
+  .cards-grid {
+    @apply grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+}
+
+/* =========================================================
+   Mobile-First Survey Form Styles
+========================================================= */
+@layer utilities {
+  /* Safe area padding for iOS devices with notch/home indicator */
+  .safe-area-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-top {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  /* Touch-friendly tap targets (minimum 44x44px) */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent text selection on interactive elements */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth scrolling for mobile */
+  .scroll-smooth-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Mobile input improvements */
+@media (max-width: 640px) {
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="email"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Larger touch targets for checkboxes and radio buttons */
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 20px;
+    min-height: 20px;
   }
 }

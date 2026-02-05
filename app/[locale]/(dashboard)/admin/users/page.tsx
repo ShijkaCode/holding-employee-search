@@ -107,7 +107,7 @@ export default function UsersPage() {
         .select('*, company:companies(name)')
         .order('full_name'),
       supabase.from('companies').select('id, name').order('name'),
-      supabase
+      (supabase as any)
         .from('org_hierarchy')
         .select('id, name, path_names, level_depth, company_id')
         .order('path_names'),
@@ -115,7 +115,7 @@ export default function UsersPage() {
 
     // Build a map of org_unit_id to path_names
     const pathMap = new Map<string, string>()
-    orgUnitsRes.data?.forEach((ou) => {
+    orgUnitsRes.data?.forEach((ou: { id: string | null; path_names: string | null }) => {
       if (ou.id && ou.path_names) {
         pathMap.set(ou.id, ou.path_names)
       }
@@ -129,7 +129,7 @@ export default function UsersPage() {
 
     // Filter valid org units
     const validOrgUnits: OrgUnit[] = []
-    orgUnitsRes.data?.forEach((ou) => {
+    orgUnitsRes.data?.forEach((ou: { id: string | null; name: string | null; path_names: string | null; level_depth: number | null; company_id: string | null }) => {
       if (ou.id && ou.name && ou.path_names && ou.level_depth !== null && ou.company_id) {
         validOrgUnits.push({
           id: ou.id,
@@ -234,34 +234,32 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-96" />
+      <div className="page-container">
+        <Skeleton className="h-8 w-24 sm:w-32" />
+        <Skeleton className="h-64 sm:h-96" />
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground">
-            {t('subtitle')}
-          </p>
-        </div>
+    <div className="page-container">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          {t('subtitle')}
+        </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+        <CardHeader className="pb-3 sm:pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle>{t('allUsers')}</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base sm:text-lg">{t('allUsers')}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 {t('registeredCount', { count: profiles.length })}
               </CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t('searchPlaceholder')}

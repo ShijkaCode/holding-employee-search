@@ -1,119 +1,82 @@
-# Employee Feedback System / Ажилтны санал асуулгын систем
+# Employee Feedback System
 
 A multi-tenant employee feedback and survey management system designed for holding companies with multiple subsidiaries.
 
-Холдинг компаниудад зориулсан олон салбар дэмжих ажилтны санал асуулга, судалгааны удирдлагын систем.
+## Tech Stack
 
-## Tech Stack / Технологи
-
-- **Frontend**: Next.js 15 (App Router), React 19, TypeScript
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript
 - **UI Components**: Shadcn/ui, Tailwind CSS, Lucide Icons
 - **Backend**: Next.js API Routes, Supabase
 - **Database**: PostgreSQL (Supabase)
-- **Authentication**: Supabase Auth with Row Level Security (RLS)
-- **Form Handling**: React Hook Form + Zod validation
+- **Authentication**: Supabase Auth with Magic Link
+- **Internationalization**: next-intl (English/Mongolian)
+- **Reports**: jsPDF, xlsx
 
-## Features / Онцлогууд
+## Features
 
-### Multi-tenant Architecture / Олон байгууллагын бүтэц
-- Companies (holding and subsidiaries) management
-- Role-based access control (admin, hr, specialist, employee)
-- Data isolation per company using RLS policies
+### 1. Employee Import
+- Excel/CSV file upload with drag-and-drop support
+- Column mapping interface for flexible data import
+- Preview and validation before import
+- Bulk import to organizational units
+- Support for hierarchical organizational structure
 
-### Survey Management / Судалгааны удирдлага
-- Create surveys with multiple question types:
-  - Scale (1-5 Likert scale)
-  - Text (open-ended)
-  - Single choice
-  - Multiple choice
-- Section-based question organization
-- Survey status workflow: Draft → Active → Closed
-- Employee assignment to surveys
+### 2. Survey Invitation & Reminder Emails
+- Send survey invitations via magic link (no password required)
+- Bulk email sending to assigned employees
+- Reminder emails for incomplete surveys
+- Email templates with survey details and direct access links
 
-### Data Collection / Мэдээлэл цуглуулах
-- Anonymous or identified responses
-- Progress tracking (completion rate)
-- Response validation
-
-### Reporting & Export / Тайлан ба экспорт
-- **CSV Export**: Full response data with UTF-8 support for Cyrillic/Mongolian
+### 3. Report Generation
+- **CSV Export**: Full response data with UTF-8 support (Cyrillic/Mongolian)
 - **PDF Reports**: Printable reports with:
-  - Response statistics
-  - Section averages
-  - Question-level analysis
-  - Full Mongolian language support
+  - Response statistics and completion rates
+  - Section-level averages
+  - Question-by-question analysis
+  - Visual charts and graphs
 
-## Database Schema / Өгөгдлийн сангийн бүтэц
+### 4. Progress Tracking
+- Real-time survey completion monitoring
+- Hierarchical view by organizational unit
+- Completion rates per department/company
+- Status tracking (pending, in progress, completed)
+- Anonymity guard for small sample sizes
 
-```
-companies
-├── id (uuid, PK)
-├── name
-├── parent_id (self-reference for holding structure)
-└── created_at
+### 5. Sentiment Analysis *(Planned)*
+- Analyze sentiment from survey responses
+- Categorize feedback as positive, negative, or neutral
+- Trend analysis over time
 
-profiles (extends Supabase auth.users)
-├── id (uuid, PK, FK → auth.users)
-├── email
-├── full_name
-├── role (admin | hr | specialist | employee)
-├── company_id (FK → companies)
-├── department
-└── created_at
+### 6. AI-Powered Text Analysis *(Planned)*
+- Automatic categorization of open-text responses
+- Theme extraction and summarization
+- Key insight identification
 
-surveys
-├── id (uuid, PK)
-├── title
-├── description
-├── company_id (FK → companies)
-├── status (draft | active | closed)
-├── created_by (FK → profiles)
-└── created_at
+## System Architecture
 
-survey_questions
-├── id (uuid, PK)
-├── survey_id (FK → surveys)
-├── question_code
-├── question_text
-├── type (scale | text | single_choice | multiple_choice)
-├── section_name
-├── section_order
-├── question_order
-└── options (jsonb, for choice questions)
+### Multi-tenant Structure
+- Holding company with 30-40 subsidiary companies
+- N-level organizational hierarchy support
+- Data isolation per company using Row Level Security (RLS)
 
-survey_assignments
-├── id (uuid, PK)
-├── survey_id (FK → surveys)
-├── employee_id (FK → profiles)
-└── assigned_at
+### User Roles
 
-survey_responses
-├── id (uuid, PK)
-├── survey_id (FK → surveys)
-├── employee_id (FK → profiles)
-├── answers (jsonb)
-├── status (in_progress | completed)
-└── submitted_at
-```
+| Role | Access |
+|------|--------|
+| **Admin** | Full system access, company management, all reports |
+| **Specialist** | Create surveys, send to all companies, view aggregate analytics |
+| **HR** | Company-level surveys, employee management, company reports |
+| **Employee** | Fill assigned surveys |
 
-## User Roles / Хэрэглэгчийн үүргүүд
+## Getting Started
 
-| Role | Permissions |
-|------|-------------|
-| **admin** | Full system access, company management |
-| **hr** | Survey management, view all responses, export data |
-| **specialist** | Create and manage own surveys |
-| **employee** | Fill assigned surveys |
-
-## Getting Started / Эхлүүлэх
-
-### Prerequisites / Урьдчилсан шаардлага
+### Prerequisites
 
 - Node.js 18+
 - npm or yarn
 - Supabase account
 
-### Installation / Суулгах
+### Installation
 
 1. Clone the repository:
 ```bash
@@ -131,13 +94,21 @@ npm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your Supabase credentials:
+Edit `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Email (SMTP)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+EMAIL_FROM=noreply@example.com
 ```
 
-4. Run database migrations in Supabase SQL Editor (see `supabase/migrations/`)
+4. Run database migrations (in Supabase SQL Editor or using CLI)
 
 5. Start the development server:
 ```bash
@@ -146,93 +117,43 @@ npm run dev
 
 6. Open [http://localhost:3000](http://localhost:3000)
 
-### Test Accounts / Тест хэрэглэгчид
-
-| Email | Password | Role |
-|-------|----------|------|
-| admin@test.com | test123456 | admin |
-| hr@test.com | test123456 | hr |
-| employee@test.com | test123456 | employee |
-
-## Project Structure / Төслийн бүтэц
+## Project Structure
 
 ```
 holding-employee-feedback/
 ├── app/
-│   ├── (auth)/              # Auth routes (login, register)
-│   │   └── login/
-│   ├── (dashboard)/         # Protected dashboard routes
-│   │   ├── dashboard/
-│   │   ├── forms/
-│   │   │   ├── [id]/
-│   │   │   │   ├── page.tsx      # Survey detail/edit
-│   │   │   │   ├── fill/         # Survey fill page
-│   │   │   │   └── report/       # Printable report
-│   │   │   └── page.tsx          # Survey list
-│   │   └── layout.tsx
-│   ├── api/
-│   │   └── surveys/
-│   │       └── [id]/
-│   │           ├── export/       # CSV export
-│   │           └── report-data/  # Report data API
-│   ├── layout.tsx
-│   └── page.tsx
+│   ├── [locale]/
+│   │   ├── (auth)/           # Login, signup, magic-link
+│   │   ├── (dashboard)/      # Protected routes
+│   │   │   ├── admin/        # Company & user management
+│   │   │   ├── employees/    # Employee list & import
+│   │   │   ├── forms/        # Survey CRUD & reports
+│   │   │   └── surveys/      # Survey filling
+│   │   └── auth/             # Magic link verification
+│   └── api/
+│       ├── auth/             # Magic link validation
+│       ├── employees/        # Import APIs
+│       ├── org-units/        # Organization structure
+│       └── surveys/          # Export, invitations, reminders
 ├── components/
-│   └── ui/                  # Shadcn components
-├── contexts/
-│   └── auth-context.tsx     # Auth state management
+│   ├── import/               # Employee importer components
+│   ├── org-units/            # Org tree visualization
+│   ├── survey/               # Survey & progress tracking
+│   └── ui/                   # Shadcn components
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts        # Browser Supabase client
-│   │   └── server.ts        # Server Supabase client
-│   └── pdf-report.ts        # PDF generation utility
-└── public/
+│   ├── email/                # Email templates & sending
+│   ├── supabase/             # Database clients
+│   └── pdf-report.ts         # PDF generation
+└── messages/                 # i18n translations
 ```
 
-## Key Features Explained / Гол функцууд
+## Security
 
-### Survey Creation / Судалгаа үүсгэх
-1. Navigate to Forms → Create New Survey
-2. Add title and description
-3. Add questions with section grouping
-4. Save as draft
-
-### Survey Distribution / Судалгаа түгээх
-1. Open survey detail page
-2. Click "Assign Employees" button
-3. Select employees from company
-4. Change status to "Active"
-
-### Taking Surveys / Судалгаа бөглөх
-1. Employee logs in
-2. Views assigned surveys on dashboard
-3. Fills survey and submits
-
-### Exporting Data / Өгөгдөл экспортлох
-1. HR/Admin opens survey detail
-2. Click "Export CSV" button
-3. Downloads CSV with all responses
-
-### Generating Reports / Тайлан үүсгэх
-1. Click "Тайлан" (Report) button
-2. Print dialog opens automatically
-3. Print or save as PDF
-
-## Security / Аюулгүй байдал
-
-- Row Level Security (RLS) policies ensure data isolation
-- SECURITY DEFINER functions for safe cross-table queries
-- Authentication required for all API routes
+- Row Level Security (RLS) policies for data isolation
+- Magic link authentication (passwordless)
 - Company-scoped data access
+- SECURITY DEFINER functions for safe cross-table queries
 
-## License / Лиценз
+## License
 
 MIT
-
-## Contributing / Хувь нэмэр оруулах
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request

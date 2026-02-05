@@ -70,6 +70,7 @@ export interface SurveyHierarchyStats {
 
 // Default anonymity threshold (can be overridden per survey/company)
 export const DEFAULT_ANONYMITY_THRESHOLD = 5
+export const ANONYMITY_THRESHOLD = DEFAULT_ANONYMITY_THRESHOLD
 
 // Helper type for expand/collapse state
 export type ExpandedState = Record<string, boolean>

@@ -51,7 +51,7 @@ export function AppSidebar() {
 
   const initials = profile?.full_name
     ?.split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase() || '?'
 
@@ -93,7 +93,7 @@ export function AppSidebar() {
       title: tNav('orgUnits'),
       url: '/admin/org-units',
       icon: Network,
-      roles: ['admin', 'hr'],
+      roles: ['admin'],
     },
     {
       title: tNav('users'),

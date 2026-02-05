@@ -133,16 +133,9 @@ export function EmployeeImporter({ companyId, onComplete }: EmployeeImporterProp
     setStep('importing')
     setImportProgress(0)
 
-    const result: ImportResult = {
-      orgUnitsCreated: 0,
-      employeesCreated: 0,
-      employeesUpdated: 0,
-      errors: [],
-    }
-
     try {
-      // Cache for org units: path -> id
-      const orgUnitCache = new Map<string, string>()
+      // ✅ NEW: Use Server Action instead of client-side loop
+      const { importEmployeesWithHierarchy } = await import('@/lib/actions/employees-import')
 
       // Helper to get mapping
       const getMapping = (target: string): string | undefined => {
@@ -163,126 +156,43 @@ export function EmployeeImporter({ companyId, onComplete }: EmployeeImporterProp
       const nameColumn = getMapping('name')
       const emailColumn = getMapping('email')
       const employeeIdColumn = getMapping('employee_id')
+      const phoneColumn = getMapping('phone_number')
       const hierarchyMappings = getHierarchyMappings()
 
-      // Process rows
-      const totalRows = excelData.rows.length
-      let processedRows = 0
+      // Transform data for Server Action
+      const employeesToImport = excelData.rows.map((row, index) => {
+        const org_hierarchy = hierarchyMappings.map(mapping => {
+          const levelNum = parseInt(mapping.targetField.split('_')[1])
+          const levelConfig = config.hierarchyLevels.find(l => l.level === levelNum)
 
-      for (const row of excelData.rows) {
-        try {
-          const employeeName = nameColumn ? row[nameColumn] : null
-          const email = emailColumn ? row[emailColumn] : undefined
-          const employeeId = employeeIdColumn ? row[employeeIdColumn] : undefined
-
-          if (!employeeName) {
-            result.errors.push({
-              row: processedRows + 2,
-              message: t('errors.missingName'),
-            })
-            processedRows++
-            setImportProgress(Math.round((processedRows / totalRows) * 100))
-            continue
+          return {
+            level: levelNum,
+            levelType: levelConfig?.levelType || `Level ${levelNum}`,
+            name: row.data[mapping.sourceColumn]?.trim() || '',
+            parentId: null, // Will be calculated server-side
           }
+        }).filter(h => h.name) // Remove empty levels
 
-          // Build hierarchy path and create org units
-          let currentParentId: string | null = null
-          let leafUnitId: string | null = null
-          let currentPath = ''
-
-          for (const mapping of hierarchyMappings) {
-            const value = row[mapping.sourceColumn]?.trim()
-            if (!value) continue
-
-            currentPath += `/${value}`
-            const levelNum = parseInt(mapping.targetField.split('_')[1])
-            const levelConfig = config.hierarchyLevels.find(l => l.level === levelNum)
-
-            const unitResult = await findOrCreateOrgUnit(
-              supabase,
-              companyId,
-              value,
-              currentParentId,
-              levelConfig?.levelType || `Level ${levelNum}`,
-              levelNum - 1,
-              orgUnitCache,
-              currentPath
-            )
-
-            currentParentId = unitResult.id
-            leafUnitId = unitResult.id
-            if (unitResult.created) {
-              result.orgUnitsCreated++
-            }
-          }
-
-          // Check if employee already exists (by email or employee_id)
-          let existingProfile = null
-
-          if (email) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('company_id', companyId)
-              .eq('email', email)
-              .maybeSingle()
-            existingProfile = data
-          }
-
-          if (!existingProfile && employeeId) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('company_id', companyId)
-              .eq('employee_id', employeeId)
-              .maybeSingle()
-            existingProfile = data
-          }
-
-          if (existingProfile) {
-            // Update existing
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({
-                full_name: employeeName,
-                org_unit_id: leafUnitId,
-                employee_id: employeeId || null,
-              })
-              .eq('id', existingProfile.id)
-
-            if (updateError) {
-              throw new Error(`Failed to update employee: ${updateError.message}`)
-            }
-
-            result.employeesUpdated++
-          } else if (email) {
-            // Create new profile - Note: This creates an orphan profile without auth.users
-            // In a real app, you'd want to either:
-            // 1. Invite users via email
-            // 2. Create auth.users entries (requires service role)
-            // For now, we'll update existing profiles only
-            result.errors.push({
-              row: processedRows + 2,
-              message: t('errors.noExistingUser', { email }),
-            })
-          } else {
-            result.errors.push({
-              row: processedRows + 2,
-              message: t('errors.noEmail'),
-            })
-          }
-
-        } catch (err) {
-          result.errors.push({
-            row: processedRows + 2,
-            message: err instanceof Error ? err.message : 'Unknown error',
-          })
+        return {
+          rowNumber: index + 2, // Excel row number (1-indexed + header)
+          full_name: nameColumn ? row.data[nameColumn] : '',
+          email: emailColumn ? row.data[emailColumn] : '',
+          employee_id: employeeIdColumn ? row.data[employeeIdColumn] : undefined,
+          phone_number: phoneColumn ? row.data[phoneColumn] : undefined,
+          org_hierarchy,
         }
+      }).filter(emp => emp.full_name && emp.email) // Only import rows with required data
 
-        processedRows++
-        setImportProgress(Math.round((processedRows / totalRows) * 100))
-      }
+      setImportProgress(50)
 
+      // Call Server Action - creates auth users + profiles
+      const result = await importEmployeesWithHierarchy(
+        employeesToImport,
+        companyId,
+        true // ✅ Create auth users so they can login via magic links!
+      )
+
+      setImportProgress(100)
       setImportResult(result)
       setStep('complete')
 
@@ -297,7 +207,7 @@ export function EmployeeImporter({ companyId, onComplete }: EmployeeImporterProp
       toast.error(t('messages.failed'))
       setStep('preview')
     }
-  }, [excelData, config, companyId, supabase, t])
+  }, [excelData, config, companyId, t])
 
   return (
     <div className="space-y-6">

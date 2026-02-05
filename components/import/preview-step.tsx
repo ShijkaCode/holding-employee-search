@@ -70,9 +70,9 @@ export function PreviewStep({ excelData, config }: PreviewStepProps) {
     const hierarchyMappings = getHierarchyMappings()
 
     excelData.rows.forEach((row, rowIndex) => {
-      const employeeName = nameColumn ? row[nameColumn] : null
-      const email = emailColumn ? row[emailColumn] : undefined
-      const employeeId = employeeIdColumn ? row[employeeIdColumn] : undefined
+      const employeeName = nameColumn ? row.data[nameColumn] : null
+      const email = emailColumn ? row.data[emailColumn] : undefined
+      const employeeId = employeeIdColumn ? row.data[employeeIdColumn] : undefined
 
       if (!employeeName) {
         errors.push({ row: rowIndex + 2, message: t('errors.missingName') })
@@ -85,7 +85,7 @@ export function PreviewStep({ excelData, config }: PreviewStepProps) {
       const hierarchyPath: { name: string; levelType: string }[] = []
 
       for (const mapping of hierarchyMappings) {
-        const value = row[mapping.sourceColumn]
+        const value = row.data[mapping.sourceColumn]
         if (value) {
           const levelNum = parseInt(mapping.targetField.split('_')[1])
           const levelConfig = config.hierarchyLevels.find(l => l.level === levelNum)

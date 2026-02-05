@@ -122,7 +122,8 @@ export default function OrgUnitsPage() {
     }
 
     // Fetch hierarchy for flat list (for parent selection)
-    const { data: hierarchyData } = await supabase
+    // Note: org_hierarchy is a database view, cast to bypass type checking
+    const { data: hierarchyData } = await (supabase as any)
       .from('org_hierarchy')
       .select('id, name, path_names, level_depth')
       .eq('company_id', selectedCompanyId)
@@ -163,7 +164,7 @@ export default function OrgUnitsPage() {
 
     // Set flat units for parent selection
     const validFlatUnits: FlatOrgUnit[] = []
-    hierarchyData?.forEach((h) => {
+    hierarchyData?.forEach((h: { id: string | null; name: string | null; path_names: string | null; level_depth: number | null }) => {
       if (h.id && h.name && h.path_names !== null && h.level_depth !== null) {
         validFlatUnits.push({
           id: h.id,
@@ -327,25 +328,25 @@ export default function OrgUnitsPage() {
 
   if (loading && !selectedCompanyId) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-96" />
+      <div className="page-container">
+        <Skeleton className="h-8 w-36 sm:w-48" />
+        <Skeleton className="h-64 sm:h-96" />
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="page-container">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground">{t('subtitle')}</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">{t('subtitle')}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           {isAdmin && companies.length > 1 && (
             <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Компани сонгох" />
               </SelectTrigger>
               <SelectContent>
@@ -357,7 +358,7 @@ export default function OrgUnitsPage() {
               </SelectContent>
             </Select>
           )}
-          <Button onClick={() => handleAddChild(null)}>
+          <Button onClick={() => handleAddChild(null)} size="sm">
             <Plus className="mr-2 h-4 w-4" />
             {t('addRootUnit')}
           </Button>

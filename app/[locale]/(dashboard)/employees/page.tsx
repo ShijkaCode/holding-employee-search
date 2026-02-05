@@ -67,69 +67,102 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!profile?.company_id) return
+      if (!profile) {
+        setLoading(false)
+        return
+      }
 
       setLoading(true)
 
-      // Fetch employees with their org units
-      const { data: employeesData, error: employeesError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          email,
-          role,
-          employee_id,
-          avatar_url,
-          org_unit_id,
-          department,
-          org_unit:org_units(id, name, level_type)
-        `)
-        .eq('company_id', profile.company_id)
-        .order('full_name')
+      try {
+        // Determine which company to query
+        // Admin can see all companies, others see only their company
+        let companyFilter = profile.company_id
 
-      if (employeesError) {
-        console.error('Error fetching employees:', employeesError)
-      }
+        // If admin has no company_id, try to get first company or show all
+        if (!companyFilter && profile.role === 'admin') {
+          const { data: firstCompany } = await supabase
+            .from('companies')
+            .select('id')
+            .limit(1)
+            .single()
 
-      // Fetch org hierarchy for paths
-      const { data: hierarchyData } = await supabase
-        .from('org_hierarchy')
-        .select('id, name, level_type, path_names, level_depth')
-        .eq('company_id', profile.company_id)
-        .order('path_names')
-
-      // Create a map of org_unit_id to path_names and filter valid units
-      const pathMap = new Map<string, string>()
-      const validUnits: OrgUnit[] = []
-
-      hierarchyData?.forEach((h) => {
-        if (h.id && h.name && h.level_type && h.path_names !== null && h.level_depth !== null) {
-          pathMap.set(h.id, h.path_names || h.name)
-          validUnits.push({
-            id: h.id,
-            name: h.name,
-            level_type: h.level_type,
-            path_names: h.path_names,
-            level_depth: h.level_depth,
-          })
+          if (firstCompany) {
+            companyFilter = firstCompany.id
+          }
         }
-      })
 
-      // Format employees with org paths
-      const formattedEmployees = (employeesData || []).map((emp) => ({
-        ...emp,
-        org_unit: Array.isArray(emp.org_unit) ? emp.org_unit[0] : emp.org_unit,
-        org_path: emp.org_unit_id ? pathMap.get(emp.org_unit_id) : null,
-      }))
+        if (!companyFilter) {
+          console.warn('No company_id found for user')
+          setLoading(false)
+          return
+        }
 
-      setEmployees(formattedEmployees)
-      setOrgUnits(validUnits)
-      setLoading(false)
+        // Fetch employees with their org units
+        const { data: employeesData, error: employeesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            full_name,
+            email,
+            role,
+            employee_id,
+            avatar_url,
+            org_unit_id,
+            department,
+            org_unit:org_units(id, name, level_type)
+          `)
+          .eq('company_id', companyFilter)
+          .order('full_name')
+
+        if (employeesError) {
+          console.error('Error fetching employees:', employeesError)
+          setLoading(false)
+          return
+        }
+
+        // Fetch org hierarchy for paths
+        const { data: hierarchyData } = await (supabase as any)
+          .from('org_hierarchy')
+          .select('id, name, level_type, path_names, level_depth')
+          .eq('company_id', companyFilter)
+          .order('path_names')
+
+        // Create a map of org_unit_id to path_names and filter valid units
+        const pathMap = new Map<string, string>()
+        const validUnits: OrgUnit[] = []
+
+        hierarchyData?.forEach((h: { id: string | null; name: string | null; level_type: string | null; path_names: string | null; level_depth: number | null }) => {
+          if (h.id && h.name && h.level_type && h.path_names !== null && h.level_depth !== null) {
+            pathMap.set(h.id, h.path_names || h.name)
+            validUnits.push({
+              id: h.id,
+              name: h.name,
+              level_type: h.level_type,
+              path_names: h.path_names,
+              level_depth: h.level_depth,
+            })
+          }
+        })
+
+        // Format employees with org paths
+        const formattedEmployees = (employeesData || []).map((emp) => ({
+          ...emp,
+          org_unit: Array.isArray(emp.org_unit) ? emp.org_unit[0] : emp.org_unit,
+          org_path: emp.org_unit_id ? pathMap.get(emp.org_unit_id) : null,
+        }))
+
+        setEmployees(formattedEmployees)
+        setOrgUnits(validUnits)
+      } catch (error) {
+        console.error('Error fetching employees data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchData()
-  }, [profile?.company_id, supabase])
+  }, [profile, supabase])
 
   // Filter employees based on search and org unit selection
   const filteredEmployees = useMemo(() => {
@@ -177,23 +210,23 @@ export default function EmployeesPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-96" />
+      <div className="page-container">
+        <Skeleton className="h-8 w-36 sm:w-48" />
+        <Skeleton className="h-10 sm:h-12 w-full" />
+        <Skeleton className="h-64 sm:h-96" />
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="page-container">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground">{t('subtitle')}</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">{t('subtitle')}</p>
         </div>
-        <Button asChild>
+        <Button asChild size="sm" className="w-fit">
           <Link href="/employees/import">
             <Upload className="mr-2 h-4 w-4" />
             {t('importEmployees')}
@@ -202,7 +235,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">

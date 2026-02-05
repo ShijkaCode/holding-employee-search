@@ -53,6 +53,8 @@ import {
   Calendar,
   Upload,
   Hash,
+  Building2,
+  Globe,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -80,6 +82,7 @@ const createFormSchema = (t: (key: string) => string) => z.object({
   title: z.string().min(1, t('validation.titleRequired')),
   description: z.string().optional(),
   deadline: z.string().optional(),
+  scope: z.enum(['company', 'holding']),
   questions: z.array(createQuestionSchema(t)).min(1, t('validation.atLeastOneQuestion')),
 })
 
@@ -109,12 +112,16 @@ export default function NewFormPage() {
   const supabase = createClient()
   const formSchema = createFormSchema(t)
 
+  // Check if user can create holding surveys
+  const canCreateHoldingSurvey = profile?.role === 'admin' || profile?.role === 'specialist'
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
       description: '',
       deadline: '',
+      scope: 'company',
       questions: [],
     },
   })
@@ -177,7 +184,11 @@ export default function NewFormPage() {
   }
 
   const onSubmit = async (data: FormValues) => {
-    if (!profile?.company_id) {
+    // For company surveys, company_id is required
+    // For holding surveys, company_id is null
+    const isHolding = data.scope === 'holding'
+
+    if (!isHolding && !profile?.company_id) {
       toast.error(t('noCompany'))
       return
     }
@@ -192,8 +203,10 @@ export default function NewFormPage() {
           title: data.title,
           description: data.description || null,
           deadline: data.deadline || null,
-          company_id: profile.company_id,
-          created_by: profile.id,
+          company_id: isHolding ? null : profile?.company_id,
+          created_by: profile?.id,
+          created_by_role: profile?.role,
+          scope: data.scope,
           status: 'draft',
         })
         .select()
@@ -246,14 +259,14 @@ export default function NewFormPage() {
   const sections = [...new Set(fields.map((f) => f.section_name || 'General'))]
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+    <div className="page-container">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('createNew')}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t('createNew')}</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             {t('buildSurvey')}
           </p>
         </div>
@@ -313,6 +326,49 @@ export default function NewFormPage() {
                   </FormItem>
                 )}
               />
+
+              {canCreateHoldingSurvey && (
+                <FormField
+                  control={form.control}
+                  name="scope"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('surveyScope')}</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectScope')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="company">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4" />
+                              <div>
+                                <span className="font-medium">{t('scopeCompany')}</span>
+                                <p className="text-xs text-muted-foreground">{t('scopeCompanyDesc')}</p>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="holding">
+                            <div className="flex items-center gap-2">
+                              <Globe className="h-4 w-4" />
+                              <div>
+                                <span className="font-medium">{t('scopeHolding')}</span>
+                                <p className="text-xs text-muted-foreground">{t('scopeHoldingDesc')}</p>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {field.value === 'holding' ? t('scopeHoldingHelp') : t('scopeCompanyHelp')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </CardContent>
           </Card>
 
