@@ -98,6 +98,24 @@
         "cancelAction": "Cancel",
         "confirmDelete": "Are you sure you want to delete this item?"
     },
+    "AIChat": {
+        "panelTitle": "AI Assistant",
+        "shortcut": "Ctrl+.",
+        "clearChat": "Clear chat",
+        "closePanel": "Close panel",
+        "openPanel": "Open AI Assistant",
+        "confirmationTitle": "Confirmation required",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "inputPlaceholder": "Ask about surveys, employees...",
+        "emptyDescription": "Ask about survey progress, completion rates, or send reminders to employees.",
+        "suggestions": [
+            "Show survey progress for the latest survey",
+            "What is the completion rate?",
+            "How many responses are completed?",
+            "Summarize the current survey status"
+        ]
+    },
     "Surveys": {
         "title": "My Surveys",
         "subtitle": "Complete your assigned surveys below",
