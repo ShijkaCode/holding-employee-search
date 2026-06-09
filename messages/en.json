@@ -16,6 +16,11 @@
         "forgotPassword": "Forgot your password?",
         "noAccount": "Don't have an account?",
         "signup": "Sign up",
+        "signIn": "Sign in",
+        "signupDisabled": {
+            "title": "Registration is closed",
+            "subtitle": "Accounts are created by your administrator. If you need access, please contact your HR team or system administrator."
+        },
         "error": "An error occurred",
         "success": "Logged in successfully",
         "validation": {
@@ -309,6 +314,9 @@
         "statusError": "Failed to update survey status",
         "remindersSent": "Reminders sent to {count} employees",
         "remindersDesc": "Employees who have not completed the survey have been notified.",
+        "remindersError": "Failed to send reminders",
+        "remindersNone": "No reminders sent — everyone is done or reminder limits were reached.",
+        "remindersPartial": "Sent {sent}, skipped {skipped}, failed {failed}",
         "exportCompleted": "Export completed",
         "exportDownloaded": "Downloaded {filename}",
         "exportError": "Failed to export survey data",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { hasValidToken } from '@/lib/auth/magic-link'
+import { generateMagicLink } from '@/lib/auth/magic-link'
 import { batchSendInvitations, type SendInvitationOptions } from '@/lib/email/send-invitation'
 
 export const maxDuration = 300 // 5 minutes
@@ -10,6 +10,11 @@ const MIN_HOURS_BETWEEN_REMINDERS = 24
 
 interface SendRemindersRequest {
   employeeIds?: string[] // Specific employees, or all incomplete if not provided
+  locale?: 'en' | 'mn'
+}
+
+function normalizeLocale(value: unknown): 'en' | 'mn' {
+  return value === 'mn' ? 'mn' : 'en'
 }
 
 interface SendRemindersResponse {
@@ -87,36 +92,60 @@ export async function POST(
     // Parse request body
     const body: SendRemindersRequest = await request.json()
     const { employeeIds } = body
+    const locale = normalizeLocale(body.locale)
 
-    // Get incomplete employees (not completed)
-    let query = supabase
-      .from('survey_responses')
+    // Base population = everyone ASSIGNED to the survey, not just those who
+    // already have a survey_responses row. Employees who never opened the
+    // survey have no response row at all, so a response-based query would
+    // silently skip exactly the people who most need a reminder.
+    let assignmentQuery = supabase
+      .from('survey_assignments')
       .select(`
-        id,
         employee_id,
-        status,
-        profile:profiles!survey_responses_employee_id_fkey(
+        profile:profiles!survey_assignments_employee_id_fkey(
           id,
           full_name,
           email,
           company_id,
           companies(name),
-          activation_token,
-          updated_at
+          invitation_consumed_at
         )
       `)
       .eq('survey_id', surveyId)
-      .neq('status', 'completed')
 
     if (employeeIds && employeeIds.length > 0) {
-      query = query.in('employee_id', employeeIds)
+      assignmentQuery = assignmentQuery.in('employee_id', employeeIds)
     }
 
-    const { data: incompleteResponses, error: responsesError } = await query
+    const { data: assignments, error: assignmentsError } = await assignmentQuery
+
+    if (assignmentsError) {
+      throw new Error(`Failed to fetch assignments: ${assignmentsError.message}`)
+    }
+
+    // Look up who has already completed so we can exclude them.
+    const { data: responseRows, error: responsesError } = await supabase
+      .from('survey_responses')
+      .select('employee_id, status')
+      .eq('survey_id', surveyId)
 
     if (responsesError) {
       throw new Error(`Failed to fetch responses: ${responsesError.message}`)
     }
+
+    const statusByEmployee = new Map(
+      (responseRows || []).map((r) => [r.employee_id, r.status])
+    )
+
+    // Incomplete = assigned AND not completed. Never-started employees (no
+    // response row) are included with an implicit "pending" status.
+    const incompleteResponses = (assignments || [])
+      .filter((a) => statusByEmployee.get(a.employee_id) !== 'completed')
+      .map((a) => ({
+        employee_id: a.employee_id,
+        status: statusByEmployee.get(a.employee_id) ?? 'pending',
+        profile: a.profile,
+      }))
 
     // Get invitation history for reminder limits
     const { data: invitations } = await supabase
@@ -193,16 +222,10 @@ export async function POST(
         }
       }
 
-      // Check if employee has valid magic link token
-      const hasToken = await hasValidToken(employee.id)
-
-      if (!hasToken) {
-        console.warn(`Skipping ${employee.email}: no valid magic link token`)
+      // Skip if employee already activated their account on this invite cycle.
+      if (employee.invitation_consumed_at) {
         results.skipped++
-        results.errors.push({
-          email: employee.email,
-          error: 'No valid magic link token. Send initial invitation first.',
-        })
+        results.reasons.alreadyCompleted++
         continue
       }
 
@@ -212,9 +235,13 @@ export async function POST(
         : employee.companies
       const companyName = companyData?.name || 'Your Company'
 
-      // Reconstruct magic link URL from existing token
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      const magicLinkUrl = `${baseUrl}/en/auth/magic-link?token=${employee.activation_token}&survey=${survey.id}`
+      // Issue a fresh magic link for every reminder. The previous token is replaced.
+      const { url: magicLinkUrl } = await generateMagicLink({
+        employeeId: employee.id,
+        surveyId: survey.id,
+        email: employee.email,
+        locale,
+      })
 
       reminders.push({
         employeeId: employee.id,
@@ -226,7 +253,7 @@ export async function POST(
         magicLinkUrl,
         deadline: survey.deadline ? new Date(survey.deadline) : undefined,
         companyName,
-        locale: 'en', // TODO: Get from user preferences
+        locale,
         isReminder: true,
       })
     }

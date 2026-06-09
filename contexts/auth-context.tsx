@@ -1,10 +1,11 @@
-'use client'
+﻿'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Tables } from '@/types/database'
+import { debugLog } from '@/lib/debug'
 
 type Profile = Tables<'profiles'>
 
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     try {
-      console.log('[Auth] Fetching profile for:', userId)
+      debugLog('[Auth] Fetching profile for:', userId)
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
@@ -93,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('[Auth] Profile fetch error:', fetchError.message)
         return null
       }
-      console.log('[Auth] Profile loaded:', data?.role)
+      debugLog('[Auth] Profile loaded:', data?.role)
       return data
     } catch (err) {
       console.error('[Auth] Profile fetch exception:', err)
@@ -106,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * This is the single path for both initial load and auth events.
    */
   const handleAuthenticated = useCallback(async (authenticatedUser: User) => {
-    console.log('[Auth] Handling authenticated user:', authenticatedUser.id)
+    debugLog('[Auth] Handling authenticated user:', authenticatedUser.id)
 
     // Set user immediately and transition to fetching profile
     setUser(authenticatedUser)
@@ -119,14 +120,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(profileData)
     setAuthState('AUTHENTICATED_READY')
 
-    console.log('[Auth] Auth ready, profile:', profileData ? 'loaded' : 'null')
+    debugLog('[Auth] Auth ready, profile:', profileData ? 'loaded' : 'null')
   }, [fetchProfile])
 
   /**
    * Handle unauthenticated state - clear all auth data.
    */
   const handleUnauthenticated = useCallback(() => {
-    console.log('[Auth] Handling unauthenticated state')
+    debugLog('[Auth] Handling unauthenticated state')
     setUser(null)
     setProfile(null)
     setAuthState('UNAUTHENTICATED')
@@ -137,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Mark as checking session on mount
     if (!hasInitializedRef.current) {
-      console.log('[Auth] Setting up auth listener...')
+      debugLog('[Auth] Setting up auth listener...')
       setAuthState('CHECKING_SESSION')
     }
 
@@ -150,22 +151,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         if (!isMounted) return
 
-        console.log('[Auth] Auth event:', event, session?.user?.id || 'no user')
+        debugLog('[Auth] Auth event:', event, session?.user?.id || 'no user')
 
         // Handle INITIAL_SESSION - this is the source of truth for initial state
         if (event === 'INITIAL_SESSION') {
           // Prevent double handling in StrictMode
           if (hasInitializedRef.current) {
-            console.log('[Auth] Already initialized via INITIAL_SESSION, skipping...')
+            debugLog('[Auth] Already initialized via INITIAL_SESSION, skipping...')
             return
           }
           hasInitializedRef.current = true
 
           if (session?.user) {
-            console.log('[Auth] Initial session found, authenticating...')
+            debugLog('[Auth] Initial session found, authenticating...')
             await handleAuthenticated(session.user)
           } else {
-            console.log('[Auth] No initial session, marking unauthenticated...')
+            debugLog('[Auth] No initial session, marking unauthenticated...')
             handleUnauthenticated()
           }
           return
@@ -227,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Sign out handler - clears state and redirects.
    */
   const signOut = useCallback(async () => {
-    console.log('[Auth] Signing out...')
+    debugLog('[Auth] Signing out...')
     try {
       await supabase.auth.signOut()
       // State will be cleared by onAuthStateChange handler

@@ -62,7 +62,7 @@ import {
   Users,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +74,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { AIAnalysisButton } from '@/components/survey/ai-analysis-button'
+import { XlsxUploadAnalysis } from '@/components/survey/xlsx-upload-analysis'
 
 interface Survey {
   id: string
@@ -179,6 +180,7 @@ export default function FormDetailPage() {
   const tForms = useTranslations('Forms')
   const tStatus = useTranslations('SurveyStatus')
   const tCommon = useTranslations('Common')
+  const locale = useLocale()
 
   const [survey, setSurvey] = useState<Survey | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -328,8 +330,8 @@ export default function FormDetailPage() {
         .select('id, path_names')
 
       const orgPathMap = new Map<string, string>()
-      ;(orgHierarchyData || []).forEach((oh: { id: string; path_names: string }) => {
-        orgPathMap.set(oh.id, oh.path_names)
+      ;(orgHierarchyData || []).forEach((oh) => {
+        if (oh.id && oh.path_names) orgPathMap.set(oh.id, oh.path_names)
       })
 
       const formattedResponses = (responsesData || []).map((r) => {
@@ -522,20 +524,46 @@ export default function FormDetailPage() {
     }
   }
 
-  const mockNotify = async () => {
+  const handleSendReminders = async () => {
     setSendingReminder(true)
+    try {
+      const response = await fetch(`/api/surveys/${surveyId}/send-reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // Server recomputes incomplete from assignments; sending the visible
+          // list keeps the action scoped to what HR is currently looking at.
+          employeeIds: incompleteEmployees.map((e) => e.employee_id),
+          locale,
+        }),
+      })
 
-    // Simulate sending reminders
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+      const result = await response.json()
 
-    const employeeIds = incompleteEmployees.map((e) => e.employee_id)
-    console.log('Sending reminders to employees:', employeeIds)
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to send reminders')
+      }
 
-    toast.success(t('remindersSent', { count: incompleteEmployees.length }), {
-      description: t('remindersDesc'),
-    })
+      const { sent, skipped, failed } = result.results
 
-    setSendingReminder(false)
+      if (sent > 0 && failed === 0) {
+        toast.success(t('remindersSent', { count: sent }), {
+          description: t('remindersDesc'),
+        })
+      } else if (sent > 0) {
+        toast.warning(t('remindersPartial', { sent, skipped, failed }))
+      } else {
+        toast.info(t('remindersNone'))
+      }
+
+      // Reflect new sent_at / retry_count in the Invitations tab.
+      await refreshInvitations()
+    } catch (error) {
+      console.error('Error sending reminders:', error)
+      toast.error(t('remindersError'))
+    } finally {
+      setSendingReminder(false)
+    }
   }
 
   const handleStatusChange = async (newStatus: 'draft' | 'active' | 'closed') => {
@@ -787,6 +815,7 @@ export default function FormDetailPage() {
           employeeIds,
           method: 'email',
           companyId: selectedCompanyFilter !== 'all' ? selectedCompanyFilter : undefined,
+          locale,
         }),
       })
 
@@ -824,6 +853,7 @@ export default function FormDetailPage() {
         body: JSON.stringify({
           employeeIds: [employeeId],
           method: 'email',
+          locale,
         }),
       })
 
@@ -1168,6 +1198,7 @@ export default function FormDetailPage() {
                 <FileDown className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">{t('report')}</span>
               </Button>
+              <XlsxUploadAnalysis />
               <AIAnalysisButton
                 surveyId={surveyId}
                 companyId={selectedCompanyFilter !== 'all' ? selectedCompanyFilter : undefined}
@@ -1192,7 +1223,7 @@ export default function FormDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={mockNotify}
+              onClick={handleSendReminders}
               disabled={sendingReminder || incompleteEmployees.length === 0}
             >
               <Bell className="h-4 w-4 sm:mr-2" />
@@ -1465,7 +1496,7 @@ export default function FormDetailPage() {
                 </div>
                 {!isHRViewingHoldingSurvey && (
                   <Button
-                    onClick={mockNotify}
+                    onClick={handleSendReminders}
                     disabled={sendingReminder || incompleteEmployees.length === 0}
                   >
                     <Bell className="mr-2 h-4 w-4" />

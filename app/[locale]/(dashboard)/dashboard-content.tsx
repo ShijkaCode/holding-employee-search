@@ -3,6 +3,7 @@
 import { useAuth, AuthState } from '@/contexts/auth-context'
 import { Loader2, AlertCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { debugLog, debugWarn } from '@/lib/debug'
 
 /**
  * Dashboard content wrapper that handles auth state rendering.
@@ -17,7 +18,7 @@ export function DashboardContent({ children }: { children: React.ReactNode }) {
     const { authState, user, profile, error, isLoading, isReady, isUnauthenticated } = useAuth()
     const t = useTranslations('Auth.states')
 
-    console.log('[DashboardContent] Render - state:', authState, 'user:', user?.id, 'profile:', profile?.role)
+    debugLog('[DashboardContent] Render - state:', authState, 'user:', user?.id, 'profile:', profile?.role)
 
     const getLoadingMessage = (state: AuthState): string => {
         switch (state) {
@@ -87,7 +88,7 @@ export function DashboardContent({ children }: { children: React.ReactNode }) {
     }
 
     // Fallback for any unexpected state (should never happen)
-    console.warn('[DashboardContent] Unexpected auth state:', authState)
+    debugWarn('[DashboardContent] Unexpected auth state:', authState)
     return (
         <div className="flex h-screen w-screen items-center justify-center bg-background">
             <div className="flex flex-col items-center gap-4">

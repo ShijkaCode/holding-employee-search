@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { hashToken } from '@/lib/auth/magic-link'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, surveyId } = await request.json()
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown'
+
+    const limit = await rateLimit({ key: `magic_link:${ip}`, max: 10, windowSeconds: 60 })
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many attempts. Please wait and try again.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
+    }
+
+    const { token, surveyId } = (await request.json()) as { token?: string; surveyId?: string }
 
     if (!token) {
       return NextResponse.json(
@@ -12,29 +27,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate token using admin client
+    const tokenHashed = hashToken(token)
+
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, activation_token, updated_at')
-      .eq('activation_token', token)
+      .select('id, email, activation_token_hash, activation_token_expires_at, invitation_consumed_at, first_login_at')
+      .eq('activation_token_hash', tokenHashed)
       .single()
 
-    if (profileError || !profile) {
+    if (profileError || !profile || !profile.email) {
       return NextResponse.json(
         { success: false, error: 'Invalid or expired magic link' },
         { status: 401 }
       )
     }
 
-    // Check if token is expired (7 days)
-    const tokenAge = Date.now() - new Date(profile.updated_at || Date.now()).getTime()
-    const maxAge = 7 * 24 * 60 * 60 * 1000 // 7 days
+    if (profile.invitation_consumed_at) {
+      return NextResponse.json(
+        { success: false, error: 'This magic link has already been used' },
+        { status: 401 }
+      )
+    }
 
-    if (tokenAge > maxAge) {
-      // Clear expired token
+    if (
+      !profile.activation_token_expires_at ||
+      new Date(profile.activation_token_expires_at).getTime() <= Date.now()
+    ) {
       await supabaseAdmin
         .from('profiles')
-        .update({ activation_token: null })
+        .update({
+          activation_token_hash: null,
+          activation_token_expires_at: null,
+        })
         .eq('id', profile.id)
 
       return NextResponse.json(
@@ -43,63 +67,57 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update profile status
     const now = new Date().toISOString()
-    const { data: existingProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('first_login_at')
-      .eq('id', profile.id)
-      .single()
 
-    await supabaseAdmin
+    // Mark token consumed atomically — clear hash so it cannot be reused.
+    const { error: consumeError } = await supabaseAdmin
       .from('profiles')
       .update({
-        activation_token: null, // Invalidate token
+        activation_token_hash: null,
+        activation_token_expires_at: null,
+        invitation_consumed_at: now,
         invitation_status: 'activated',
         last_login_at: now,
-        first_login_at: existingProfile?.first_login_at || now,
+        first_login_at: profile.first_login_at || now,
       })
       .eq('id', profile.id)
+      .is('invitation_consumed_at', null) // defensive: double-redeem race
 
-    // Update survey invitation if provided
+    if (consumeError) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to redeem magic link' },
+        { status: 500 }
+      )
+    }
+
     if (surveyId) {
       await supabaseAdmin
         .from('survey_invitations')
-        .update({
-          status: 'clicked',
-          clicked_at: now,
-        })
+        .update({ status: 'clicked', clicked_at: now })
         .eq('employee_id', profile.id)
         .eq('survey_id', surveyId)
     }
 
-    // Create temporary password for this session
-    const tempPassword = `magic_${token.substring(0, 20)}_${Date.now()}`
+    // Mint a real Supabase magic-link OTP; client redeems via verifyOtp.
+    // No password mutation, no temp password leaked over the wire.
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: profile.email,
+    })
 
-    // Set temporary password via admin
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      profile.id,
-      {
-        password: tempPassword,
-        email_confirm: true,
-      }
-    )
-
-    if (updateError) {
-      console.error('Failed to set temp password:', updateError)
+    if (linkError || !linkData?.properties?.email_otp) {
+      console.error('Failed to mint Supabase OTP:', linkError)
       return NextResponse.json(
         { success: false, error: 'Failed to create session' },
         { status: 500 }
       )
     }
 
-    // Return credentials for client-side sign in
     return NextResponse.json({
       success: true,
       email: profile.email,
-      tempPassword,
+      otp: linkData.properties.email_otp,
     })
-
   } catch (error) {
     console.error('Magic link validation error:', error)
     return NextResponse.json(

@@ -51,10 +51,11 @@ export default function MagicLinkPage() {
           return
         }
 
-        // Create session with returned credentials
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        // Create session via Supabase-issued OTP. No password is set or revealed.
+        const { error: signInError } = await supabase.auth.verifyOtp({
           email: result.email,
-          password: result.tempPassword,
+          token: result.otp,
+          type: 'email',
         })
 
         if (signInError) {

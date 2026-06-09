@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { activateSurvey, closeSurvey, assignSurveyToCompanies } from '@/lib/ai/data-access'
 import type { AIUserRole } from '@/lib/ai/types'
-
-/** Untyped admin client for AI tables not in generated Database types */
-function getUntypedAdmin() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
 
 interface ConfirmActionRequest {
   actionId: string
@@ -37,8 +28,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Missing actionId' }, { status: 400 })
   }
 
-  // Use untyped admin client for AI tables (not in generated Supabase types)
-  const admin = getUntypedAdmin()
+  const admin = supabaseAdmin
 
   const { data: task } = await admin
     .from('ai_tasks')

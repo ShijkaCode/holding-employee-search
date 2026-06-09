@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { runAgent } from '@/lib/ai/agent'
+import { rateLimit } from '@/lib/rate-limit'
 import {
   getSurveyProgress,
   getNonRespondents,
@@ -60,6 +62,42 @@ export async function POST(request: NextRequest): Promise<Response> {
       status: 403,
       headers: { 'Content-Type': 'text/event-stream' },
     })
+  }
+
+  // Per-user request throttle: 20 messages per minute.
+  const rl = await rateLimit({ key: `ai_chat:${user.id}`, max: 20, windowSeconds: 60 })
+  if (!rl.allowed) {
+    return new Response(
+      sseEncode({ type: 'error', message: 'Rate limit exceeded. Please slow down.' }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Retry-After': String(Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000)),
+        },
+      }
+    )
+  }
+
+  // Daily token budget per user. Defaults to 250k input + 100k output per UTC day.
+  const dailyInLimit = Number(process.env.AI_DAILY_TOKENS_IN_LIMIT || 250000)
+  const dailyOutLimit = Number(process.env.AI_DAILY_TOKENS_OUT_LIMIT || 100000)
+  const { data: usageRows } = await supabaseAdmin
+    .from('ai_usage_daily')
+    .select('tokens_in, tokens_out')
+    .eq('user_id', user.id)
+    .eq('usage_date', new Date().toISOString().slice(0, 10))
+    .maybeSingle()
+  const usedIn = usageRows?.tokens_in ?? 0
+  const usedOut = usageRows?.tokens_out ?? 0
+  if (usedIn >= dailyInLimit || usedOut >= dailyOutLimit) {
+    return new Response(
+      sseEncode({
+        type: 'error',
+        message: 'Daily AI usage limit reached. Try again tomorrow or contact an admin.',
+      }),
+      { status: 429, headers: { 'Content-Type': 'text/event-stream' } }
+    )
   }
 
   let payload: ChatRequest
@@ -362,6 +400,13 @@ export async function POST(request: NextRequest): Promise<Response> {
           tokensIn: result.tokensIn || null,
           tokensOut: result.tokensOut || null,
           latencyMs,
+        })
+
+        // Track daily token usage for the cap check on the next request.
+        await supabaseAdmin.rpc('ai_usage_increment', {
+          p_user_id: user.id,
+          p_tokens_in: result.tokensIn || 0,
+          p_tokens_out: result.tokensOut || 0,
         })
 
         send({ type: 'text', content: result.text })

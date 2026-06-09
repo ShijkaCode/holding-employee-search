@@ -7,8 +7,284 @@ export type Json =
   | Json[]
 
 export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   public: {
     Tables: {
+      ai_messages: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          latency_ms: number | null
+          role: string
+          session_id: string
+          tokens_in: number | null
+          tokens_out: number | null
+          tool_input: Json | null
+          tool_name: string | null
+          tool_output: Json | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          role: string
+          session_id: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          tool_input?: Json | null
+          tool_name?: string | null
+          tool_output?: Json | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          role?: string
+          session_id?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          tool_input?: Json | null
+          tool_name?: string | null
+          tool_output?: Json | null
+        }
+        Relationships: []
+      }
+      ai_preferences: {
+        Row: {
+          auto_execute_level: string
+          company_id: string | null
+          created_at: string
+          id: string
+          locale: string | null
+          metadata: Json
+          response_style: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_execute_level?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          locale?: string | null
+          metadata?: Json
+          response_style?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_execute_level?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          locale?: string | null
+          metadata?: Json
+          response_style?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_sessions: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          locale: string | null
+          metadata: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          locale?: string | null
+          metadata?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          locale?: string | null
+          metadata?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_task_steps: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          error: string | null
+          id: string
+          input: Json | null
+          output: Json | null
+          requires_approval: boolean
+          status: string
+          step_order: number
+          task_id: string
+          tool_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          requires_approval?: boolean
+          status?: string
+          step_order?: number
+          task_id: string
+          tool_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          requires_approval?: boolean
+          status?: string
+          step_order?: number
+          task_id?: string
+          tool_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_tasks: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string
+          goal: string | null
+          id: string
+          metadata: Json
+          priority: number
+          session_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by: string
+          goal?: string | null
+          id?: string
+          metadata?: Json
+          priority?: number
+          session_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          goal?: string | null
+          id?: string
+          metadata?: Json
+          priority?: number
+          session_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_tool_runs: {
+        Row: {
+          completed_at: string | null
+          error: string | null
+          id: string
+          input: Json | null
+          latency_ms: number | null
+          message_id: string | null
+          output: Json | null
+          session_id: string
+          started_at: string
+          status: string
+          tool_name: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          input?: Json | null
+          latency_ms?: number | null
+          message_id?: string | null
+          output?: Json | null
+          session_id: string
+          started_at?: string
+          status?: string
+          tool_name: string
+        }
+        Update: {
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          input?: Json | null
+          latency_ms?: number | null
+          message_id?: string | null
+          output?: Json | null
+          session_id?: string
+          started_at?: string
+          status?: string
+          tool_name?: string
+        }
+        Relationships: []
+      }
+      ai_usage_daily: {
+        Row: {
+          requests: number
+          tokens_in: number
+          tokens_out: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          requests?: number
+          tokens_in?: number
+          tokens_out?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          requests?: number
+          tokens_in?: number
+          tokens_out?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string | null
@@ -70,26 +346,13 @@ export type Database = {
           sort_order?: number | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "org_units_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "org_units_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "org_units"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
           activation_token: string | null
+          activation_token_expires_at: string | null
+          activation_token_hash: string | null
           auth_method: string | null
           avatar_url: string | null
           company_id: string | null
@@ -100,6 +363,7 @@ export type Database = {
           first_login_at: string | null
           full_name: string
           id: string
+          invitation_consumed_at: string | null
           invitation_status: string | null
           last_login_at: string | null
           org_unit_id: string | null
@@ -109,6 +373,8 @@ export type Database = {
         }
         Insert: {
           activation_token?: string | null
+          activation_token_expires_at?: string | null
+          activation_token_hash?: string | null
           auth_method?: string | null
           avatar_url?: string | null
           company_id?: string | null
@@ -119,6 +385,7 @@ export type Database = {
           first_login_at?: string | null
           full_name: string
           id: string
+          invitation_consumed_at?: string | null
           invitation_status?: string | null
           last_login_at?: string | null
           org_unit_id?: string | null
@@ -128,6 +395,8 @@ export type Database = {
         }
         Update: {
           activation_token?: string | null
+          activation_token_expires_at?: string | null
+          activation_token_hash?: string | null
           auth_method?: string | null
           avatar_url?: string | null
           company_id?: string | null
@@ -138,6 +407,7 @@ export type Database = {
           first_login_at?: string | null
           full_name?: string
           id?: string
+          invitation_consumed_at?: string | null
           invitation_status?: string | null
           last_login_at?: string | null
           org_unit_id?: string | null
@@ -145,22 +415,31 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_org_unit_id_fkey"
-            columns: ["org_unit_id"]
-            isOneToOne: false
-            referencedRelation: "org_units"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          count: number
+          key: string
+          updated_at: string
+          window_seconds: number
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          updated_at?: string
+          window_seconds?: number
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          updated_at?: string
+          window_seconds?: number
+          window_start?: string
+        }
+        Relationships: []
       }
       survey_assignments: {
         Row: {
@@ -375,6 +654,42 @@ export type Database = {
         }
         Relationships: []
       }
+      survey_sentiment_analyses: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          request_sent_at: string | null
+          results: Json | null
+          status: string
+          survey_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          request_sent_at?: string | null
+          results?: Json | null
+          status?: string
+          survey_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          request_sent_at?: string | null
+          results?: Json | null
+          status?: string
+          survey_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       surveys: {
         Row: {
           company_id: string | null
@@ -420,42 +735,6 @@ export type Database = {
         }
         Relationships: []
       }
-      survey_sentiment_analyses: {
-        Row: {
-          id: string
-          survey_id: string
-          status: string
-          request_sent_at: string | null
-          completed_at: string | null
-          error_message: string | null
-          results: Json | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          survey_id: string
-          status?: string
-          request_sent_at?: string | null
-          completed_at?: string | null
-          error_message?: string | null
-          results?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          survey_id?: string
-          status?: string
-          request_sent_at?: string | null
-          completed_at?: string | null
-          error_message?: string | null
-          results?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       holding_survey_company_stats: {
@@ -472,21 +751,81 @@ export type Database = {
       }
       org_hierarchy: {
         Row: {
-          id: string
-          company_id: string
-          name: string
+          ancestors: string[] | null
+          company_id: string | null
+          id: string | null
+          level_depth: number | null
+          level_type: string | null
+          name: string | null
           parent_id: string | null
-          level_type: string
+          path_ids: string | null
+          path_names: string | null
           sort_order: number | null
-          level_depth: number
-          path_names: string
-          path_ids: string[]
+          sort_path: number[] | null
+        }
+        Relationships: []
+      }
+      org_unit_stats: {
+        Row: {
+          company_id: string | null
+          completion_rate: number | null
+          level_depth: number | null
+          level_type: string | null
+          org_unit_id: string | null
+          org_unit_name: string | null
+          survey_id: string | null
+          total_assigned: number | null
+          total_completed: number | null
+        }
+        Relationships: []
+      }
+      department_stats: {
+        Row: {
+          company_id: string | null
+          completion_rate: number | null
+          department: string | null
+          survey_id: string | null
+          total_assigned: number | null
+          total_completed: number | null
+        }
+        Relationships: []
+      }
+      survey_stats: {
+        Row: {
+          company_id: string | null
+          completion_rate: number | null
+          created_at: string | null
+          deadline: string | null
+          description: string | null
+          scope: string | null
+          status: Database["public"]["Enums"]["survey_status"] | null
+          survey_id: string | null
+          title: string | null
+          total_assigned: number | null
+          total_completed: number | null
+          total_partial: number | null
         }
         Relationships: []
       }
     }
     Functions: {
-      [_ in never]: never
+      ai_usage_increment: {
+        Args: { p_tokens_in: number; p_tokens_out: number; p_user_id: string }
+        Returns: {
+          requests_total: number
+          tokens_in_total: number
+          tokens_out_total: number
+        }[]
+      }
+      rate_limit_hit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          reset_at: string
+        }[]
+      }
+      rate_limit_gc: { Args: never; Returns: number }
     }
     Enums: {
       question_type:
@@ -507,7 +846,7 @@ export type Database = {
   }
 }
 
-// Helper types for easier access to table row types
+// Simple helper types — preserved from the previous file to avoid breaking call sites
 export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
 export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
 export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']

@@ -160,15 +160,6 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <div className="mt-6 text-center text-sm">
-            {t('noAccount')}{' '}
-            <Link
-              href="/signup"
-              className="text-primary underline-offset-4 hover:underline font-medium"
-            >
-              {t('signup')}
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>

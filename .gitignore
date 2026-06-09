@@ -42,3 +42,7 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Local data / scratch (not for repo)
+OCSSS dataset.xlsx
+little-text-to-shijka.txt

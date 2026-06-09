@@ -10,6 +10,11 @@ interface SendInvitationsRequest {
   employeeIds?: string[] // Specific employees, or all if not provided
   method?: 'email' | 'sms' // Phase 3: email only, Phase 4: SMS
   companyId?: string // Filter by company (for holding surveys)
+  locale?: 'en' | 'mn'
+}
+
+function normalizeLocale(value: unknown): 'en' | 'mn' {
+  return value === 'mn' ? 'mn' : 'en'
 }
 
 interface SendInvitationsResponse {
@@ -83,6 +88,7 @@ export async function POST(
     // Parse request body
     const body: SendInvitationsRequest = await request.json()
     const { employeeIds, method = 'email', companyId } = body
+    const locale = normalizeLocale(body.locale)
 
     // Phase 3: Only email supported
     if (method === 'sms') {
@@ -152,7 +158,7 @@ export async function POST(
         employeeId: employee.id,
         surveyId: survey.id,
         email: employee.email,
-        locale: 'en', // TODO: Get from user preferences
+        locale,
       })
 
       // Get company name
@@ -170,9 +176,9 @@ export async function POST(
         surveyDescription: survey.description || undefined,
         magicLinkUrl: magicLink.url,
         deadline: survey.deadline ? new Date(survey.deadline) : undefined,
-        estimatedTime: '10-15 minutes', // TODO: Calculate from questions
+        estimatedTime: '10-15 minutes',
         companyName,
-        locale: 'en', // TODO: Get from user preferences
+        locale,
         isReminder: false,
       })
     }
